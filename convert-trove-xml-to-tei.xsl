@@ -1,29 +1,5 @@
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="3.0"  xmlns="http://www.tei-c.org/ns/1.0" expand-text="yes" xmlns:c="http://www.w3.org/ns/xproc-step">
-	<!-- HTTP -->
-	<xsl:template match="c:response | c:body | c:header">
-		<xsl:copy>
-			<xsl:apply-templates select="@* | node()"/>
-		</xsl:copy>
-	</xsl:template>
-	<xsl:template match="@*">
-		<xsl:copy/>
-	</xsl:template>
-	<!-- remove any payload headers from the response, because we'll have invalidated them by modifying and retransmitting the result -->
-	<xsl:template match="c:header[lower-case(@name)=('content-length', 'content-range', 'trailer', 'transfer-encoding')]"/>
-	
-	<xsl:param name="proxy-base-uri"/>
-	<xsl:param name="upstream-base-uri"/>
-	
-	<xsl:template name="rewrite-uri">
-		<xsl:sequence select="
-			concat(
-				$proxy-base-uri,
-				substring-after(., $upstream-base-uri)
-			)
-		"/>
-	</xsl:template>
-	
-	<!-- TEI -->
+
 	<xsl:template match="response">
 		<teiCorpus n="{query}">
 			<xsl:apply-templates/>
@@ -35,13 +11,7 @@
 			<teiCorpus>
 				<xsl:attribute name="type" select="ancestor::category/@code"/>
 				<!-- the corpus may continue on another page of Trove API results -->
-				<xsl:for-each select="@next">
-					<!-- The @next attribute in Trove's response is nominally a URL but it does not encode spaces -->
-					<!-- reported as https://librariesaustraliaref.nla.gov.au/reft205.aspx?pmi=288697844889961888 -->
-					<xsl:attribute name="next">
-						<xsl:call-template name="rewrite-uri"/>
-					</xsl:attribute>
-				</xsl:for-each>
+				<xsl:copy-of select="@next"/>
 				<!-- TODO expand to cover all Trove's content, not just newspaper articles -->
 				<xsl:apply-templates select="article"/>
 			</teiCorpus>
