@@ -20,6 +20,14 @@
 		"/>
 	</xsl:template>
 	<!-- 
+		Some troveUrl values have a spurious extra . at the start of the domain name.
+		See https://github.com/GLAM-Workbench/trove-api-intro/issues/49#issuecomment-1709466290
+	-->
+	<xsl:template match="troveUrl/text()[starts-with(., 'https://.')]">
+		<xsl:sequence select="concat('https://', substring-after(., 'https://.'))"/>
+	</xsl:template>
+	
+	<!-- 
 	Trove newspapers 'articleText' content contains what is apparently escaped HTML, but the
 	escaping is only applied to the angle brackets used to tag p and span elements, and is not 
 	used with ampersands or with other usage of angle brackets in the actual text content.
@@ -27,17 +35,17 @@
 	-->
 	<xsl:template match="articleText/text()">
 		<xsl:analyze-string select="." regex="&lt;p&gt;(.*?)&lt;/p&gt;">
-		<xsl:matching-substring>
-			<xsl:element name="p">
-				<xsl:analyze-string select="regex-group(1)" regex="&lt;span&gt;(.*?)&lt;/span&gt;">
-					<xsl:matching-substring>
-						<xsl:element name="span">
-							<xsl:value-of select="regex-group(1)"/>
-						</xsl:element>
-					</xsl:matching-substring>
-				</xsl:analyze-string>
-			</xsl:element>
-		</xsl:matching-substring>
-	</xsl:analyze-string>
+			<xsl:matching-substring>
+				<xsl:element name="p">
+					<xsl:analyze-string select="regex-group(1)" regex="&lt;span&gt;(.*?)&lt;/span&gt;">
+						<xsl:matching-substring>
+							<xsl:element name="span">
+								<xsl:value-of select="regex-group(1)"/>
+							</xsl:element>
+						</xsl:matching-substring>
+					</xsl:analyze-string>
+				</xsl:element>
+			</xsl:matching-substring>
+		</xsl:analyze-string>
 	</xsl:template>
 </xsl:stylesheet>
