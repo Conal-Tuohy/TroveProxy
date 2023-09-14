@@ -101,9 +101,12 @@
 				<p:document href="../xslt/rewrite-trove-uris-as-proxy-uris.xsl"/>
 			</p:input>
 		</p:xslt>
-
+		
 		<p:documentation>Now process just the body of the Trove API response</p:documentation>
 		<p:filter select="/c:response/c:body/*" name="trove-response-body"/>
+
+		<p:documentation>Include additional data for people listed in the response</p:documentation>
+		<z:enhance-people-data/>
 		
 		<p:documentation>Convert the Trove XML response into the appropriate format</p:documentation>
 		<p:choose>
@@ -185,6 +188,49 @@
 				<p:pipe step="parameters" port="result"/>
 			</p:input>
 		</p:insert>
+	</p:declare-step>
+	
+	<p:declare-step name="enhance-people-data" type="z:enhance-people-data">
+		<p:documentation>
+			Trove <people/> records are quite minimal, but there are more detailed EAC-CPF records available via an SRU service
+			which can be imported into each <people/> record.
+		</p:documentation>
+	
+		<p:documentation>
+			Source document is a Trove XML result which may contain <people/> elements
+		</p:documentation>
+		<p:input port="source"/>
+		<p:documentation>
+			Result document is a Trove XML result whose <people/> elements have 
+			each had their associated <eac-cpf/> element inserted as a child element.
+		</p:documentation>
+		<p:output port="result"/>
+		<p:choose>
+			<p:when test="//people[@id]">
+				<p:xslt name="make-people-australia-http-request">
+					<p:input port="parameters"><p:empty/></p:input>
+					<p:input port="stylesheet">
+						<p:document href="../xslt/make-people-australia-http-request.xsl"/>
+					</p:input>
+				</p:xslt>
+				<p:http-request name="query-people-australia"/>
+				<p:wrap-sequence wrapper="trove-response-and-people-australia-response">
+					<p:input port="source">
+						<p:pipe step="enhance-people-data" port="source"/>
+						<p:pipe step="query-people-australia" port="result"/>
+					</p:input>
+				</p:wrap-sequence>
+				<p:xslt name="merge-eac-cpf-into-people">
+					<p:input port="parameters"><p:empty/></p:input>
+					<p:input port="stylesheet">
+						<p:document href="../xslt/merge-eac-cpf-into-people.xsl"/>
+					</p:input>
+				</p:xslt>
+			</p:when>
+			<p:otherwise>
+				<p:identity name="no-people-to-enhance"/>
+			</p:otherwise>
+		</p:choose>
 	</p:declare-step>
 	
 </p:declare-step>
