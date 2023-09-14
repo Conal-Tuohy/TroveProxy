@@ -13,7 +13,10 @@
 		<xsl:variable name="parameters" select="$query => tokenize('&amp;')"/>
 		<!-- throw out any category parameters that don't match current category -->
 		<xsl:variable name="refined-parameters" select="
-			$parameters[substring-before(., '=') != 'category' or substring-after(., '=') = $category-code] 
+			(
+				$parameters[substring-before(., '=') != 'category'], (: ditch any categories :)
+				concat('category=', $category-code) (: add the current category back :)
+			)
 		"/>
 		<xsl:attribute name="next" select="
 			concat($base-uri, '?', string-join($refined-parameters, '&amp;'))

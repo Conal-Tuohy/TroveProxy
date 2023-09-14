@@ -4,12 +4,16 @@
 	<xsl:param name="request-uri"/>
 	<xsl:param name="proxy-base-uri"/>
 	<xsl:param name="upstream-base-uri"/>
+	<xsl:param name="proxy-parameters"/>
 	
 	<xsl:template name="rewrite-uri">
 		<xsl:sequence select="
 			concat(
 				$proxy-base-uri,
-				substring-after(., $upstream-base-uri)
+				substring-after(., $upstream-base-uri),
+				(: add the proxy parameters such as proxy-format onto the URI :)
+				if (contains(., '?')) then '&amp;' else '?', 
+				$proxy-parameters
 			)
 		"/>
 	</xsl:template>
@@ -26,8 +30,8 @@
 		</xsl:copy>
 	</xsl:template>
 	
-	<xsl:template match="@next">
-		<xsl:attribute name="next">
+	<xsl:template match="@next | @url">
+		<xsl:attribute name="{local-name()}">
 			<xsl:call-template name="rewrite-uri"/>
 		</xsl:attribute>
 	</xsl:template>

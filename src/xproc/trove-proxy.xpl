@@ -50,12 +50,23 @@
 		<!-- the base URI of the upstream API -->
 		<p:variable name="upstream-base-uri" select=" 'https://api.trove.nla.gov.au/' "/>
 		<!-- regular expression to parse the request URI -->
-		<p:variable name="uri-parser" select=" '(.*?//.*?/)proxy/(.*)' "/>
+		<p:variable name="uri-parser" select=" '(.*?//.*?/proxy/)(.*)' "/>
 	
 		<p:variable name="proxy-base-uri" select="replace($request-uri, $uri-parser, '$1')"/>
 		<p:variable name="relative-uri" select="replace($request-uri, $uri-parser, '$2')"/>
 		
 		<p:variable name="proxy-format" select="/c:request/c:param-set[@xml:id='parameters']/c:param[@name='proxy-format']/@value"/>
+		
+		<p:documentation>
+			Parameters which are directed at the proxy server itself, rather than at the Trove API, such as proxy-format, 
+			are recorded so that they can be appended to URIs returned in Trove responses
+		</p:documentation>
+		<p:variable name="proxy-parameters" select="
+			string-join(
+				/c:request/c:param-set[@xml:id='parameters']/c:param[starts-with(@name, 'proxy-')]/concat(@name, '=', @value),
+				'&amp;'
+			)
+		"/>
 		
 		<p:documentation>Take the request received from the client, and transform it into a request directed at the Trove API</p:documentation>
 		<p:xslt name="make-trove-http-request">
@@ -85,6 +96,7 @@
 			<p:with-param name="request-uri" select="$request-uri"/>
 			<p:with-param name="proxy-base-uri" select="$proxy-base-uri"/>
 			<p:with-param name="upstream-base-uri" select="$upstream-base-uri"/>
+			<p:with-param name="proxy-parameters" select="$proxy-parameters"/>
 			<p:input port="stylesheet">
 				<p:document href="../xslt/rewrite-trove-uris-as-proxy-uris.xsl"/>
 			</p:input>
