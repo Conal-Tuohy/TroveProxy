@@ -15,8 +15,11 @@
 	<xsl:mode on-no-match="shallow-copy"/>
 	<xsl:template match="/trove-response-and-people-australia-response">
 		<!-- copy the Trove response, merging eac-cpf records into each person -->
-		<xsl:apply-templates select="response"/>
+		<xsl:apply-templates/>
 	</xsl:template>
+	<!-- don't copy the srw response; we are only copying the Trove API response, and pulling snippets from the srw response
+	into individual people records within that Trove API response -->
+	<xsl:template match="c:response[c:body/srw:searchRetrieveResponse]"/>
 	<xsl:template match="people[@id]">
 		<xsl:copy>
 			<xsl:copy-of select="@*"/>

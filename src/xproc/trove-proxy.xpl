@@ -55,7 +55,13 @@
 		<p:variable name="proxy-base-uri" select="replace($request-uri, $uri-parser, '$1')"/>
 		<p:variable name="relative-uri" select="replace($request-uri, $uri-parser, '$2')"/>
 		
+		<p:documentation>The output format for the proxy</p:documentation>
 		<p:variable name="proxy-format" select="/c:request/c:param-set[@xml:id='parameters']/c:param[@name='proxy-format']/@value"/>
+		
+		<p:documentation>
+			Set to 'true' to include related eac-cpf from People Australia into Trove 'people' records
+		</p:documentation>
+		<p:variable name="proxy-include-people-australia" select="/c:request/c:param-set[@xml:id='parameters']/c:param[@name='proxy-include-people-australia']/@value"/>
 		
 		<p:documentation>
 			Parameters which are directed at the proxy server itself, rather than at the Trove API, such as proxy-format, 
@@ -106,7 +112,9 @@
 		<p:filter select="/c:response/c:body/*" name="trove-response-body"/>
 
 		<p:documentation>Include additional data for people listed in the response</p:documentation>
-		<z:enhance-people-data/>
+		<z:enhance-people-data>
+			<p:with-option name="include-people-australia" select="$proxy-include-people-australia"/>
+		</z:enhance-people-data>
 		
 		<p:documentation>Convert the Trove XML response into the appropriate format</p:documentation>
 		<p:choose>
@@ -191,6 +199,7 @@
 	</p:declare-step>
 	
 	<p:declare-step name="enhance-people-data" type="z:enhance-people-data">
+		<p:option name="include-people-australia"/>
 		<p:documentation>
 			Trove <people/> records are quite minimal, but there are more detailed EAC-CPF records available via an SRU service
 			which can be imported into each <people/> record.
@@ -206,7 +215,7 @@
 		</p:documentation>
 		<p:output port="result"/>
 		<p:choose>
-			<p:when test="//people[@id]">
+			<p:when test="$include-people-australia='true' and exists(//people[@id])">
 				<p:xslt name="make-people-australia-http-request">
 					<p:input port="parameters"><p:empty/></p:input>
 					<p:input port="stylesheet">

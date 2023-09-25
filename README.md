@@ -7,6 +7,18 @@ The proxy consists of a docker container containing:
 - An XProc pipeline implementing the proxy
 - XSLT transformations for converting the output of the Trove API into various other formats 
 
+## API Usage
+Access the proxied Trove API as you would normally access the Trove API, except replacing 
+`https://api.trove.nla.gov.au/` with `http://localhost:8080/proxy/` as the base URI of the API service.
+
+The proxied API accepts some additional parameters:
+
+|Parameter name|Values|
+|------------------------|----------|
+|proxy-include-people-australia|If set to `true` then additional information about people will be added from People Australia|
+|proxy-format|Set to `tei` to return TEI XML, or `atom` to return Atom Syndication XML, or leave blank for Trove XML|
+
+
 ## Developing
 To build the docker application, naming the image `trove-proxy`:
 

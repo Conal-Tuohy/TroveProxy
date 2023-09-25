@@ -1,0 +1,551 @@
+
+<c:response xmlns:c="http://www.w3.org/ns/xproc-step" status="200">
+	<c:header name="Server" value="nginx"/>
+	<c:header name="Date" value="Sun, 24 Sep 2023 23:22:20 GMT"/>
+	<c:header name="Content-Type" value="text/xml; charset=UTF-8"/>
+	<c:header name="Connection" value="close"/>
+	<c:body content-type="text/xml;charset=&#34;UTF-8&#34;">
+		<searchRetrieveResponse xmlns="http://www.loc.gov/zing/srw/">
+			<version>1.1</version>
+			<numberOfRecords>1</numberOfRecords>
+			<resultSetId>smihip</resultSetId>
+			<resultSetIdleTime>600</resultSetIdleTime>
+			<records xmlns:ns1="http://www.loc.gov/zing/srw/">
+				<record>
+					<recordSchema>urn:isbn:1-931666-33-4</recordSchema>
+					<recordPacking>xml</recordPacking>
+					<recordData>
+						<eac-cpf xmlns="urn:isbn:1-931666-33-4" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+							<control>
+								<recordId>1704885</recordId>
+								<otherRecordId>http://nla.gov.au/nla.party-1704885</otherRecordId>
+								<otherRecordId>bc43f3c6-5227-485b-b631-cb81200f177c</otherRecordId>
+								<maintenanceStatus>revised</maintenanceStatus>
+								<maintenanceAgency>
+									<agencyCode>AU-ANL:PEAU</agencyCode>
+									<agencyName>National Library of Australia Party Infrastructure</agencyName>
+								</maintenanceAgency>
+								<languageDeclaration>
+									<language languageCode="eng">English</language>
+									<script scriptCode="Latn">Latin</script>
+								</languageDeclaration>
+								<maintenanceHistory>
+									<maintenanceEvent>
+										<eventType>created</eventType>
+										<eventDateTime standardDateTime="2017-04-20T04:43:17Z"/>
+										<agentType>human</agentType>
+										<agent>lthompson</agent>
+										<eventDescription>AU-AIAS-C317063  created  nla.party-1704885. </eventDescription>
+									</maintenanceEvent>
+									<maintenanceEvent>
+										<eventType>updated</eventType>
+										<eventDateTime standardDateTime="2017-04-20T04:43:40Z"/>
+										<agentType>human</agentType>
+										<agent>lthompson</agent>
+										<eventDescription>AU-AIAS-C363938  added to  nla.party-1704885. </eventDescription>
+									</maintenanceEvent>
+									<maintenanceEvent>
+										<eventType>updated</eventType>
+										<eventDateTime standardDateTime="2017-07-27T09:40:49Z"/>
+										<agentType>machine</agentType>
+										<agent>harvester</agent>
+										<eventDescription>AU-AIAS-C317063  updated  nla.party-1704885. </eventDescription>
+									</maintenanceEvent>
+									<maintenanceEvent>
+										<eventType>updated</eventType>
+										<eventDateTime standardDateTime="2017-07-27T10:01:29Z"/>
+										<agentType>machine</agentType>
+										<agent>harvester</agent>
+										<eventDescription>AU-AIAS-C363938  updated  nla.party-1704885. </eventDescription>
+									</maintenanceEvent>
+									<maintenanceEvent>
+										<eventType>updated</eventType>
+										<eventDateTime standardDateTime="2017-10-06T08:33:05Z"/>
+										<agentType>machine</agentType>
+										<agent>harvester</agent>
+										<eventDescription>AU-AIAS-C363938  updated  nla.party-1704885. </eventDescription>
+									</maintenanceEvent>
+									<maintenanceEvent>
+										<eventType>updated</eventType>
+										<eventDateTime standardDateTime="2018-01-12T03:48:52Z"/>
+										<agentType>machine</agentType>
+										<agent>harvester</agent>
+										<eventDescription>AU-AIAS-C317063  updated  nla.party-1704885. </eventDescription>
+									</maintenanceEvent>
+									<maintenanceEvent>
+										<eventType>updated</eventType>
+										<eventDateTime standardDateTime="2018-01-12T04:11:26Z"/>
+										<agentType>machine</agentType>
+										<agent>harvester</agent>
+										<eventDescription>AU-AIAS-C363938  updated  nla.party-1704885. </eventDescription>
+									</maintenanceEvent>
+									<maintenanceEvent>
+										<eventType>updated</eventType>
+										<eventDateTime standardDateTime="2018-01-17T05:07:11Z"/>
+										<agentType>machine</agentType>
+										<agent>harvester</agent>
+										<eventDescription>AU-AIAS-C317063  updated  nla.party-1704885. </eventDescription>
+									</maintenanceEvent>
+									<maintenanceEvent>
+										<eventType>updated</eventType>
+										<eventDateTime standardDateTime="2018-01-17T21:27:50Z"/>
+										<agentType>machine</agentType>
+										<agent>harvester</agent>
+										<eventDescription>AU-AIAS-C317063  updated  nla.party-1704885. </eventDescription>
+									</maintenanceEvent>
+									<maintenanceEvent>
+										<eventType>updated</eventType>
+										<eventDateTime standardDateTime="2018-01-17T22:39:13Z"/>
+										<agentType>machine</agentType>
+										<agent>harvester</agent>
+										<eventDescription>AU-AIAS-C317063  updated  nla.party-1704885. </eventDescription>
+									</maintenanceEvent>
+									<maintenanceEvent>
+										<eventType>updated</eventType>
+										<eventDateTime standardDateTime="2018-01-17T23:01:43Z"/>
+										<agentType>machine</agentType>
+										<agent>harvester</agent>
+										<eventDescription>AU-AIAS-C363938  updated  nla.party-1704885. </eventDescription>
+									</maintenanceEvent>
+									<maintenanceEvent>
+										<eventType>updated</eventType>
+										<eventDateTime standardDateTime="2018-01-18T23:34:01Z"/>
+										<agentType>machine</agentType>
+										<agent>harvester</agent>
+										<eventDescription>AU-AIAS-C317063  updated  nla.party-1704885. </eventDescription>
+									</maintenanceEvent>
+									<maintenanceEvent>
+										<eventType>updated</eventType>
+										<eventDateTime standardDateTime="2018-01-18T23:58:23Z"/>
+										<agentType>machine</agentType>
+										<agent>harvester</agent>
+										<eventDescription>AU-AIAS-C363938  updated  nla.party-1704885. </eventDescription>
+									</maintenanceEvent>
+									<maintenanceEvent>
+										<eventType>updated</eventType>
+										<eventDateTime standardDateTime="2018-01-19T03:35:45Z"/>
+										<agentType>machine</agentType>
+										<agent>harvester</agent>
+										<eventDescription>AU-AIAS-C317063  updated  nla.party-1704885. </eventDescription>
+									</maintenanceEvent>
+									<maintenanceEvent>
+										<eventType>updated</eventType>
+										<eventDateTime standardDateTime="2018-01-19T03:58:35Z"/>
+										<agentType>machine</agentType>
+										<agent>harvester</agent>
+										<eventDescription>AU-AIAS-C363938  updated  nla.party-1704885. </eventDescription>
+									</maintenanceEvent>
+									<maintenanceEvent>
+										<eventType>updated</eventType>
+										<eventDateTime standardDateTime="2018-02-19T00:43:03Z"/>
+										<agentType>machine</agentType>
+										<agent>harvester</agent>
+										<eventDescription>AU-AIAS-C317063  updated  nla.party-1704885. </eventDescription>
+									</maintenanceEvent>
+									<maintenanceEvent>
+										<eventType>updated</eventType>
+										<eventDateTime standardDateTime="2018-02-19T01:05:11Z"/>
+										<agentType>machine</agentType>
+										<agent>harvester</agent>
+										<eventDescription>AU-AIAS-C363938  updated  nla.party-1704885. </eventDescription>
+									</maintenanceEvent>
+									<maintenanceEvent>
+										<eventType>updated</eventType>
+										<eventDateTime standardDateTime="2019-02-13T00:29:51Z"/>
+										<agentType>machine</agentType>
+										<agent>harvester</agent>
+										<eventDescription>AU-AIAS-C317063  updated  nla.party-1704885. </eventDescription>
+									</maintenanceEvent>
+									<maintenanceEvent>
+										<eventType>updated</eventType>
+										<eventDateTime standardDateTime="2019-02-13T00:53:59Z"/>
+										<agentType>machine</agentType>
+										<agent>harvester</agent>
+										<eventDescription>AU-AIAS-C363938  updated  nla.party-1704885. </eventDescription>
+									</maintenanceEvent>
+									<maintenanceEvent>
+										<eventType>updated</eventType>
+										<eventDateTime standardDateTime="2020-04-16T03:16:36Z"/>
+										<agentType>machine</agentType>
+										<agent>harvester</agent>
+										<eventDescription>AU-AIAS-C317063  updated  nla.party-1704885. </eventDescription>
+									</maintenanceEvent>
+									<maintenanceEvent>
+										<eventType>updated</eventType>
+										<eventDateTime standardDateTime="2020-04-16T03:40:34Z"/>
+										<agentType>machine</agentType>
+										<agent>harvester</agent>
+										<eventDescription>AU-AIAS-C363938  updated  nla.party-1704885. </eventDescription>
+									</maintenanceEvent>
+									<maintenanceEvent>
+										<eventType>updated</eventType>
+										<eventDateTime standardDateTime="2020-06-04T04:43:13Z"/>
+										<agentType>machine</agentType>
+										<agent>harvester</agent>
+										<eventDescription>AU-AIAS-C317063  updated  nla.party-1704885. </eventDescription>
+									</maintenanceEvent>
+									<maintenanceEvent>
+										<eventType>updated</eventType>
+										<eventDateTime standardDateTime="2020-06-04T05:08:11Z"/>
+										<agentType>machine</agentType>
+										<agent>harvester</agent>
+										<eventDescription>AU-AIAS-C363938  updated  nla.party-1704885. </eventDescription>
+									</maintenanceEvent>
+									<maintenanceEvent>
+										<eventType>updated</eventType>
+										<eventDateTime standardDateTime="2020-06-16T03:29:04Z"/>
+										<agentType>machine</agentType>
+										<agent>harvester</agent>
+										<eventDescription>AU-AIAS-C317063  updated  nla.party-1704885. </eventDescription>
+									</maintenanceEvent>
+									<maintenanceEvent>
+										<eventType>updated</eventType>
+										<eventDateTime standardDateTime="2020-06-16T03:51:04Z"/>
+										<agentType>machine</agentType>
+										<agent>harvester</agent>
+										<eventDescription>AU-AIAS-C363938  updated  nla.party-1704885. </eventDescription>
+									</maintenanceEvent>
+									<maintenanceEvent>
+										<eventType>updated</eventType>
+										<eventDateTime standardDateTime="2020-06-23T00:53:54Z"/>
+										<agentType>machine</agentType>
+										<agent>harvester</agent>
+										<eventDescription>AU-AIAS-C317063  updated  nla.party-1704885. </eventDescription>
+									</maintenanceEvent>
+									<maintenanceEvent>
+										<eventType>updated</eventType>
+										<eventDateTime standardDateTime="2020-06-23T01:16:07Z"/>
+										<agentType>machine</agentType>
+										<agent>harvester</agent>
+										<eventDescription>AU-AIAS-C363938  updated  nla.party-1704885. </eventDescription>
+									</maintenanceEvent>
+									<maintenanceEvent>
+										<eventType>updated</eventType>
+										<eventDateTime standardDateTime="2020-10-09T13:47:26Z"/>
+										<agentType>machine</agentType>
+										<agent>harvester</agent>
+										<eventDescription>AU-AIAS-C363938  updated  nla.party-1704885. </eventDescription>
+									</maintenanceEvent>
+									<maintenanceEvent>
+										<eventType>updated</eventType>
+										<eventDateTime standardDateTime="2020-10-16T13:33:00Z"/>
+										<agentType>machine</agentType>
+										<agent>harvester</agent>
+										<eventDescription>AU-AIAS-C317063  updated  nla.party-1704885. </eventDescription>
+									</maintenanceEvent>
+									<maintenanceEvent>
+										<eventType>updated</eventType>
+										<eventDateTime standardDateTime="2020-12-11T13:34:08Z"/>
+										<agentType>machine</agentType>
+										<agent>harvester</agent>
+										<eventDescription>AU-AIAS-C363938  updated  nla.party-1704885. </eventDescription>
+									</maintenanceEvent>
+									<maintenanceEvent>
+										<eventType>updated</eventType>
+										<eventDateTime standardDateTime="2022-11-11T14:24:24Z"/>
+										<agentType>machine</agentType>
+										<agent>harvester</agent>
+										<eventDescription>AuCNLKIN-72895224  added to  nla.party-1704885. </eventDescription>
+									</maintenanceEvent>
+								</maintenanceHistory>
+								<conventionDeclaration>
+									<abbreviation>AACR2</abbreviation>
+									<citation>Anglo-American Cataloging Rules, Second Edition.</citation>
+								</conventionDeclaration>
+							</control>
+							<cpfDescription>
+								<identity>
+									<entityType>person</entityType>
+									<nameEntry>
+										<part localType="forename">Mark</part>
+										<authorizedForm>AACR2</authorizedForm>
+									</nameEntry>
+								</identity>
+								<alternativeSet>
+									<setComponent>
+										<objectXMLWrap>
+											<eac-cpf xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:eac-cpf="http://jefferson.village.virginia.edu/eac" xml:id="_fb9bb97e-5bed-4ff5-be8c-9bd346f78d50">
+												<control>
+													<maintenanceAgency>
+														<agencyCode>AuCNLKIN</agencyCode>
+														<agencyName>Libraries Australia</agencyName>
+													</maintenanceAgency>
+													<maintenanceHistory>
+														<maintenanceEvent>
+															<eventType>created</eventType>
+															<eventDateTime standardDateTime="2000-00-00"/>
+															<agentType>machine</agentType>
+															<agent/>
+														</maintenanceEvent>
+														<maintenanceEvent>
+															<eventType>updated</eventType>
+															<eventDateTime standardDateTime="2022-11-08T11:10:55"/>
+															<agentType>machine</agentType>
+														</maintenanceEvent>
+													</maintenanceHistory>
+													<maintenanceStatus>revised</maintenanceStatus>
+													<conventionDeclaration>
+														<abbreviation>AACR2</abbreviation>
+														<citation>Anglo-American Cataloging Rules, Second Edition.</citation>
+													</conventionDeclaration>
+													<conventionDeclaration>
+														<abbreviation>ISO3166-1alpha-2</abbreviation>
+														<citation>ISO3166-1, Codes for the representation of names of countries and their subdivisions - Part 1: Country codes</citation>
+													</conventionDeclaration>
+													<recordId>72895224</recordId>
+													<otherRecordId localType="AuCNLKIN">http://nla.gov.au/anbd.aut-an72895224</otherRecordId>
+													<otherRecordId localType="AU-AuCNLKIN">72895224</otherRecordId>
+													<otherRecordId localType="AU-CaAIA">XX45387</otherRecordId>
+													<otherRecordId localType="AU-AIAS:AUTH">A45387</otherRecordId>
+												</control>
+												<sources>
+													<source>
+														<objectXMLWrap>
+															<dc xmlns="http://purl.org/dc/elements/1.1/">
+																<dc:publisher>AU-AIAS:AUTH</dc:publisher>
+																<dc:identifier>A45387</dc:identifier>
+															</dc>
+														</objectXMLWrap>
+													</source>
+												</sources>
+												<cpfDescription>
+													<identity>
+														<entityType>person</entityType>
+														<entityId>http://nla.gov.au/anbd.aut-an72895224</entityId>
+														<nameEntry>
+															<authorizedForm>AACR2</authorizedForm>
+															<part localType="forename">Mark</part>
+														</nameEntry>
+													</identity>
+													<description>
+														<localDescriptions localType="nationalities">
+															<localDescription localType="nationality">
+																<term>Australian</term>
+																<placeEntry countryCode="AU" vocabularySource="ISO3166-1alpha-2"/>
+															</localDescription>
+														</localDescriptions>
+													</description>
+													<relations/>
+												</cpfDescription>
+											</eac-cpf>
+										</objectXMLWrap>
+									</setComponent>
+									<setComponent>
+										<objectXMLWrap>
+											<eac-cpf xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:eac-cpf="http://jefferson.village.virginia.edu/eac" xml:id="_4092ebca-ca62-4f13-8cb0-08f8c2bd3d21">
+												<control>
+													<maintenanceAgency>
+														<agencyCode>AU-AIAS</agencyCode>
+														<agencyName>AIATSIS Aboriginal Biographical Index</agencyName>
+													</maintenanceAgency>
+													<maintenanceStatus>revised</maintenanceStatus>
+													<languageDeclaration>
+														<language languageCode="eng"/>
+														<script scriptCode="Latin"/>
+													</languageDeclaration>
+													<maintenanceHistory>
+														<maintenanceEvent>
+															<eventType>created</eventType>
+															<eventDateTime standardDateTime="2013-10-10"/>
+															<agentType>machine</agentType>
+															<agent>AU-AIAS</agent>
+														</maintenanceEvent>
+														<maintenanceEvent>
+															<eventType>updated</eventType>
+															<eventDateTime standardDateTime="2020-12-12T00:00:00"/>
+															<agentType>machine</agentType>
+														</maintenanceEvent>
+													</maintenanceHistory>
+													<recordId>C363938</recordId>
+													<otherRecordId>oai:ultra0.aiatsis.gov.au:363938</otherRecordId>
+													<sources>
+														<source>
+															<objectXMLWrap>
+																<dc xmlns="http://purl.org/dc/elements/1.1/">
+																	<dc:publisher>AU-AIAS:AUTH</dc:publisher>
+																	<dc:identifier>A45387</dc:identifier>
+																</dc>
+															</objectXMLWrap>
+														</source>
+													</sources>
+												</control>
+												<cpfDescription>
+													<description>
+														<places>
+															<place>
+																<placeRole>Residence</placeRole>
+																<placeEntry vocabularySource="http://www.aiatsis.gov.au/thesaurus/">Flinders Ranges (NE SA SH54-09, SH54-13)</placeEntry>
+															</place>
+															<place>
+																<placeRole>People</placeRole>
+																<placeEntry vocabularySource="http://www.aiatsis.gov.au/thesaurus/">Adnyamathanha people L10</placeEntry>
+															</place>
+														</places>
+														<localDescriptions localType="nationalities">
+															<localDescription localType="nationality">
+																<term>Australian</term>
+																<placeEntry countryCode="AU" vocabularySource="ISO3166-1alpha-2"/>
+															</localDescription>
+														</localDescriptions>
+													</description>
+													<identity>
+														<nameEntry>
+															<part>Mark</part>
+														</nameEntry>
+													</identity>
+													<relations>
+														<resourceRelation resourceRelationType="subjectOf">
+															<objectXMLWrap>
+																<dc xmlns="http://purl.org/dc/elements/1.1/">
+																	<dc:publisher>Adelaide : South Australian Department of Environment and Planning, Aboriginal Heritage Branch, 1985,</dc:publisher>
+																	<dc:date>1985</dc:date>
+																	<dc:coverage>p. 84</dc:coverage>
+																	<dc:title>Adnyamathanha genealogy / Christine Davis, </dc:title>
+																	<dc:description>
+																		<p>Summary: Family tree of Angepena Billy: Veronica Brown; born 19 February 1967; daughter of Margaret Coulthard and John Brown; Veronica's son, Mark</p>
+																	</dc:description>
+																	<dc:identifier>https://iats.ent.sirsidynix.net.au/client/en_AU/external/search/detailnonmodal/ent:$002f$002fSD_ILS$002f0$002fSD_ILS:363938/ada</dc:identifier>
+																	<dc:description>
+																		<p>Place: Flinders Ranges (NE SA SH54-09, SH54-13)</p>
+																	</dc:description>
+																	<dc:description>
+																		<p>Language: Adnyamathanha people L10</p>
+																	</dc:description>
+																</dc>
+															</objectXMLWrap>
+														</resourceRelation>
+													</relations>
+												</cpfDescription>
+											</eac-cpf>
+										</objectXMLWrap>
+									</setComponent>
+									<setComponent>
+										<objectXMLWrap>
+											<eac-cpf xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:eac-cpf="http://jefferson.village.virginia.edu/eac" xml:id="_38b8e271-9d91-4a2b-adac-555314cc55b6">
+												<control>
+													<maintenanceAgency>
+														<agencyCode>AU-AIAS</agencyCode>
+														<agencyName>AIATSIS Aboriginal Biographical Index</agencyName>
+													</maintenanceAgency>
+													<maintenanceStatus>revised</maintenanceStatus>
+													<languageDeclaration>
+														<language languageCode="eng"/>
+														<script scriptCode="Latin"/>
+													</languageDeclaration>
+													<maintenanceHistory>
+														<maintenanceEvent>
+															<eventType>created</eventType>
+															<eventDateTime standardDateTime="2013-10-10"/>
+															<agentType>machine</agentType>
+															<agent>AU-AIAS</agent>
+														</maintenanceEvent>
+														<maintenanceEvent>
+															<eventType>updated</eventType>
+															<eventDateTime standardDateTime="2020-10-17T00:00:00"/>
+															<agentType>machine</agentType>
+														</maintenanceEvent>
+													</maintenanceHistory>
+													<recordId>C317063</recordId>
+													<otherRecordId>oai:ultra0.aiatsis.gov.au:317063</otherRecordId>
+													<sources>
+														<source>
+															<objectXMLWrap>
+																<dc xmlns="http://purl.org/dc/elements/1.1/">
+																	<dc:publisher>AU-AIAS:AUTH</dc:publisher>
+																	<dc:identifier>A45387</dc:identifier>
+																</dc>
+															</objectXMLWrap>
+														</source>
+													</sources>
+												</control>
+												<cpfDescription>
+													<description>
+														<places>
+															<place>
+																<placeRole>Residence</placeRole>
+																<placeEntry vocabularySource="http://www.aiatsis.gov.au/thesaurus/">Bung Yarnda / Lake Tyers (E Vic Gippsland SJ55-07)</placeEntry>
+															</place>
+															<place>
+																<placeRole>People</placeRole>
+																<placeEntry vocabularySource="http://www.aiatsis.gov.au/thesaurus/">Kurnai people S68</placeEntry>
+															</place>
+														</places>
+														<localDescriptions localType="nationalities">
+															<localDescription localType="nationality">
+																<term>Australian</term>
+																<placeEntry countryCode="AU" vocabularySource="ISO3166-1alpha-2"/>
+															</localDescription>
+														</localDescriptions>
+													</description>
+													<identity>
+														<nameEntry>
+															<part>Mark</part>
+														</nameEntry>
+													</identity>
+													<relations>
+														<resourceRelation resourceRelationType="subjectOf">
+															<objectXMLWrap>
+																<dc xmlns="http://purl.org/dc/elements/1.1/">
+																	<dc:identifier>http://aiatsis.gov.au/research/guides-and-resources/aboriginal-and-torres-strait-islander-biographical-index</dc:identifier>
+																	<dc:title>Aboriginal and Torres Strait Islander Biographical Index (ABI) Entries</dc:title>
+																	<dc:description>
+																		<p>Please be aware that some ABI records contain language, words or descriptions which may be considered offensive or distressing. These words reflect the attitude of the period in which the item was written and/or that of its author. Please also be aware that ABI records may contain references to deceased people which may cause sadness or distress.</p>
+																		<p>Names of people mentioned in this source may or may not be Indigenous.</p>
+																	</dc:description>
+																</dc>
+															</objectXMLWrap>
+														</resourceRelation>
+														<cpfRelation cpfRelationType="hierarchical-parent">
+															<relationEntry>Kurnai people S68</relationEntry>
+														</cpfRelation>
+														<resourceRelation resourceRelationType="subjectOf">
+															<objectXMLWrap>
+																<dc xmlns="http://purl.org/dc/elements/1.1/">
+																	<dc:creator>Pepper, Phillip and T. de Araugo.</dc:creator>
+																	<dc:publisher>Melbourne : Hyland House, 1985,</dc:publisher>
+																	<dc:date>1985</dc:date>
+																	<dc:coverage>p. 208.</dc:coverage>
+																	<dc:title> What did happen to the Aborigines of Victoria. Vol.1. The Kurnai of Gippsland,</dc:title>
+																	<dc:description>
+																		<p>Summary: The 1890 Aborigines Act in Victoria came into effect. Hagenuer as Board secretary had to adjudicate that 'Mark could remain under license to work on the reserve'.</p>
+																	</dc:description>
+																	<dc:identifier>https://iats.ent.sirsidynix.net.au/client/en_AU/external/search/detailnonmodal/ent:$002f$002fSD_ILS$002f0$002fSD_ILS:317063/ada</dc:identifier>
+																	<dc:description>
+																		<p>Place: Bung Yarnda / Lake Tyers (E Vic Gippsland SJ55-07)</p>
+																	</dc:description>
+																	<dc:description>
+																		<p>Language: Kurnai people S68</p>
+																	</dc:description>
+																</dc>
+															</objectXMLWrap>
+														</resourceRelation>
+													</relations>
+												</cpfDescription>
+											</eac-cpf>
+										</objectXMLWrap>
+									</setComponent>
+								</alternativeSet>
+							</cpfDescription>
+						</eac-cpf>
+					</recordData>
+					<recordPosition>1</recordPosition>
+				</record>
+			</records>
+			<echoedSearchRetrieveRequest xmlns:ns2="http://www.loc.gov/zing/srw/">
+				<version>1.1</version>
+				<query>oai.identifier = 1704885</query>
+				<xQuery>
+					<ns3:searchClause xmlns:ns3="http://www.loc.gov/zing/cql/xcql/">
+						<ns3:index>oai.identifier</ns3:index>
+						<ns3:relation>
+							<ns3:value>=</ns3:value>
+						</ns3:relation>
+						<ns3:term>1704885</ns3:term>
+					</ns3:searchClause>
+				</xQuery>
+				<maximumRecords>100</maximumRecords>
+				<recordSchema>urn:isbn:1-931666-33-4</recordSchema>
+			</echoedSearchRetrieveRequest>
+		</searchRetrieveResponse>
+	</c:body>
+</c:response>
