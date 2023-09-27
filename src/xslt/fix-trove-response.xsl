@@ -14,8 +14,16 @@
 		<!-- throw out any category parameters that don't match current category -->
 		<xsl:variable name="refined-parameters" select="
 			(
-				$parameters[substring-before(., '=') != 'category'], (: ditch any categories :)
-				concat('category=', $category-code) (: add the current category back :)
+				$parameters[not(substring-before(., '=') = ('category', 'facet'))], (: ditch any categories and facets :)
+				concat('category=', $category-code), (: add the current category back :)
+				(: parse comma-separated lists in 'facet' parameters and create multiple 'facet' parameters with single values :)
+				for $facet in 
+					$parameters[substring-before(., '=') = 'facet'] 
+				return 
+					for $facet-value in 
+						$facet => substring-after('=') => tokenize('%2C')
+					return 
+						concat('facet=', $facet-value) 
 			)
 		"/>
 		<xsl:attribute name="next" select="
