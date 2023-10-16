@@ -59,4 +59,24 @@
 			</xsl:matching-substring>
 		</xsl:analyze-string>
 	</xsl:template>
+	<!-- 
+	Trove 'snippet' elements can contain what is apparently escaped HTML, but the
+	escaping is only applied to the angle brackets used to tag b elements (which enclose
+	words that match the user's query), and is not used with ampersands or with other 
+	usage of angle brackets in the actual text content.
+	Consequently it's not possible to just use the parse-xml-fragment function to parse it, 
+	and instead we use a regular expression to parse the <b> elements.
+	-->
+	<xsl:template match="snippet/text()">
+		<xsl:analyze-string select="." regex="&lt;b&gt;(.*?)&lt;/b&gt;">
+			<xsl:matching-substring>
+				<xsl:element name="b">
+					<xsl:value-of select="regex-group(1)"/>
+				</xsl:element>
+			</xsl:matching-substring>
+			<xsl:non-matching-substring>
+				<xsl:value-of select="."/>
+			</xsl:non-matching-substring>
+		</xsl:analyze-string>
+	</xsl:template>
 </xsl:stylesheet>
