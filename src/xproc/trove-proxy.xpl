@@ -222,19 +222,40 @@
 						<p:document href="../xslt/make-people-australia-http-request.xsl"/>
 					</p:input>
 				</p:xslt>
-				<p:http-request name="query-people-australia"/>
-				<p:wrap-sequence wrapper="trove-response-and-people-australia-response">
-					<p:input port="source">
-						<p:pipe step="enhance-people-data" port="source"/>
-						<p:pipe step="query-people-australia" port="result"/>
-					</p:input>
-				</p:wrap-sequence>
-				<p:xslt name="merge-eac-cpf-into-people">
-					<p:input port="parameters"><p:empty/></p:input>
-					<p:input port="stylesheet">
-						<p:document href="../xslt/merge-eac-cpf-into-people.xsl"/>
-					</p:input>
-				</p:xslt>
+				<p:try>
+					<p:group>
+						<cx:message>
+							<p:with-option name="message" select="concat('enhancing people data with EAC-CPF from ', /c:request/@href)"/>
+						</cx:message>
+						<p:http-request name="query-people-australia" cx:timeout="10000"/><!-- timeout = 10s -->
+						<cx:message xmlns:eac="urn:isbn:1-931666-33-4" xmlns:srw="http://www.loc.gov/zing/srw/">
+							<p:with-option name="message" select="
+								concat('received ', /c:response/c:body/srw:searchRetrieveResponse/srw:numberOfRecords, ' EAC-CPF records')
+							"/>
+						</cx:message>
+						<p:wrap-sequence wrapper="trove-response-and-people-australia-response">
+							<p:input port="source">
+								<p:pipe step="enhance-people-data" port="source"/>
+								<p:pipe step="query-people-australia" port="result"/>
+							</p:input>
+						</p:wrap-sequence>
+						<p:xslt name="merge-eac-cpf-into-people">
+							<p:input port="parameters"><p:empty/></p:input>
+							<p:input port="stylesheet">
+								<p:document href="../xslt/merge-eac-cpf-into-people.xsl"/>
+							</p:input>
+						</p:xslt>
+					</p:group>
+					<p:catch>
+						<!-- if an HTTP timeout occurs calling the SRU service, simply return
+						the unenhanced people data -->
+						<p:identity>
+							<p:input port="source">
+								<p:pipe step="enhance-people-data" port="source"/>
+							</p:input>
+						</p:identity>
+					</p:catch>
+				</p:try>
 			</p:when>
 			<p:otherwise>
 				<p:identity name="no-people-to-enhance"/>
