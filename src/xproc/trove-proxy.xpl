@@ -120,6 +120,7 @@
 		<p:choose>
 			<p:when test="$proxy-format">
 				<p:documentation>Apply a crosswalk to Trove's XML response</p:documentation>
+				<p:identity name="trove-data"/>
 				<p:load name="crosswalk">
 					<p:with-option name="href" select="concat('../xslt/crosswalks/', $proxy-format, '.xsl')"/>
 				</p:load>
@@ -128,7 +129,7 @@
 					<p:with-param name="proxy-base-uri" select="$proxy-base-uri"/>
 					<p:with-param name="upstream-base-uri" select="$upstream-base-uri"/>
 					<p:input port="source">
-						<p:pipe step="trove-response-body" port="result"/>
+						<p:pipe step="trove-data" port="result"/>
 					</p:input>
 					<p:input port="stylesheet">
 						<p:pipe step="crosswalk" port="result"/>
