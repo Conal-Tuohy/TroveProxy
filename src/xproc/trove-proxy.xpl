@@ -117,30 +117,10 @@
 		</z:enhance-people-data>
 		
 		<p:documentation>Convert the Trove XML response into the appropriate format</p:documentation>
-		<p:choose>
-			<p:when test="$proxy-format">
-				<p:documentation>Apply a crosswalk to Trove's XML response</p:documentation>
-				<p:identity name="trove-data"/>
-				<p:load name="crosswalk">
-					<p:with-option name="href" select="concat('../xslt/crosswalks/', $proxy-format, '.xsl')"/>
-				</p:load>
-				<p:xslt name="apply-crosswalk">
-					<p:with-param name="request-uri" select="$request-uri"/>
-					<p:with-param name="proxy-base-uri" select="$proxy-base-uri"/>
-					<p:with-param name="upstream-base-uri" select="$upstream-base-uri"/>
-					<p:input port="source">
-						<p:pipe step="trove-data" port="result"/>
-					</p:input>
-					<p:input port="stylesheet">
-						<p:pipe step="crosswalk" port="result"/>
-					</p:input>
-				</p:xslt>
-			</p:when>
-			<p:otherwise>
-				<p:documentation>No transformation requested: return Trove XML</p:documentation>
-				<p:identity name="trove-xml"/>
-			</p:otherwise>
-		</p:choose>
+		<z:apply-crosswalk>
+			<p:with-option name="proxy-format" select="$proxy-format"/>
+			<p:with-option name="request-uri" select="$request-uri"/>
+		</z:apply-crosswalk>
 		
 		<p:documentation>Transform the HTTP layer of the response</p:documentation>
 		<p:xslt name="make-proxy-http-response">
@@ -153,6 +133,40 @@
 		<z:make-http-response/>
 	</p:group>
 	
+	<p:declare-step name="apply-crosswalk" type="z:apply-crosswalk">
+		<p:documentation>
+			Performs a format crosswalk to the desired format by applying a conventionally named stylesheet:
+			If the $proxy-format option equals "x" then the stylesheet "../xslt/crosswalks/x.xsl" will be applied.
+			If the $proxy-format option is not supplied, then the source data will be returned untransformed.
+			The $request-uri parameter specifies the URI of the request which the pipeline is fulfilling.
+		</p:documentation>
+		<p:input port="source"/>
+		<p:output port="result"/>
+		<p:option name="proxy-format"/>
+		<p:option name="request-uri" required="true"/>
+		<p:choose>
+			<p:when test="$proxy-format">
+				<p:documentation>Apply a crosswalk to Trove's XML response</p:documentation>
+				<p:load name="crosswalk">
+					<p:with-option name="href" select="concat('../xslt/crosswalks/', $proxy-format, '.xsl')"/>
+				</p:load>
+				<p:xslt name="transformation">
+					<p:with-param name="request-uri" select="$request-uri"/>
+					<p:input port="source">
+						<p:pipe step="apply-crosswalk" port="source"/>
+					</p:input>
+					<p:input port="stylesheet">
+						<p:pipe step="crosswalk" port="result"/>
+					</p:input>
+				</p:xslt>
+			</p:when>
+			<p:otherwise>
+				<p:documentation>No transformation requested: return Trove XML</p:documentation>
+				<p:identity name="trove-xml"/>
+			</p:otherwise>
+		</p:choose>
+	</p:declare-step>
+
 	<p:declare-step name="parse-request" type="z:parse-request">
 		<!-- TODO decide if the c:param-set[@xml:id='uri'] is even needed in the output -->
 		<p:documentation>
