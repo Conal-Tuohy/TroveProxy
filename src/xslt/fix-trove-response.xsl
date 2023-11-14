@@ -1,5 +1,16 @@
-<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="3.0">
+<xsl:stylesheet version="3.0"
+	xmlns:xsl="http://www.w3.org/1999/XSL/Transform" 
+	xmlns:c="http://www.w3.org/ns/xproc-step"
+>
 	<xsl:mode on-no-match="shallow-copy"/>
+	
+	<!-- ensure there's exactly one 'access-control-allow-origin' header -->
+	<!-- fix for Trove bug https://github.com/Conal-Tuohy/TroveProxy/issues/24 -->
+	<xsl:template match="c:header
+		[lower-case(@name) = 'access-control-allow-origin']
+		[preceding-sibling::c:header[lower-case(@name) = 'access-control-allow-origin']]
+	"/>
+	
 	<xsl:template match="category[@code]/records/@next[contains(., '?')]">
 		<xsl:variable name="category-code" select="ancestor::category/@code"/>
 		<xsl:variable name="base-uri" select="substring-before(., '?')"/>
