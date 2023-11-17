@@ -3,7 +3,7 @@
 	<xsl:template match="/">
 		<c:request method="get" href="{
 			concat(
-				'http://www.nla.gov.au/apps/srw/search/peopleaustralia?',
+				'https://www.nla.gov.au/apps/srw/search/peopleaustralia?',
 				'version=1.1&amp;',
 				'operation=searchRetrieve&amp;',
 				'recordSchema=urn%3Aisbn%3A1-931666-33-4&amp;',
