@@ -81,9 +81,9 @@
 			<link rel="alternative" href="{troveUrl}"/>
 			<id>{@url}</id>
 			<updated>{
-				(: the date of the last update:)
-				occupation
-		   	}</updated>
+				(: the date of the last correction, or if that's missing, the publication date:)
+				(lastCorrection/lastupdated, date)[1] 
+			}</updated>
 			<xsl:copy-of select="."/>
 			<summary>{snippet}</summary>
 			<category term="{//query}"/>
