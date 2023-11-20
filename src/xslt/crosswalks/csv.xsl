@@ -27,6 +27,7 @@
 					<th>format</th>
 					<th>extent</th>
 					<th>spatialCoverage</th>
+					<th>description</th>
 					<th>abstract</th>
 					<th>text</th>
 					<!-- TODO all the rest -->
@@ -55,7 +56,7 @@
 				(descendant::creator/name => string-join("|"), contributor => string-join("|"), parent::contributor => string-join("|"))[1]
 				}</td>
 			<td>{
-				(date,issued, descendant::*[local-name()="existDates"][not(ancestor::*[local-name()="alternativeSet"])]//@standardDate => string-join("/"))[1]
+				(date,descendant::issued, descendant::*[local-name()="existDates"][not(ancestor::*[local-name()="alternativeSet"])]//@standardDate => string-join("/"))[1]
 			}</td>
 			<td>{descendant::publisher => string-join("|")}</td>
 			<td>{ (category,descendant::type[@type="category"]/value => string-join("|"))[1]
@@ -66,7 +67,7 @@
 			<td>{ (page,descendant::bibliographicCitation/value => string-join("; "))[1]
 				}</td>
 			<td>{snippet}</td>
-			<td>{type => string-join("|")}</td>			<!-- is that the best way to deal with multi-valued fields in CSV? -->
+			<td>{descendant::type => string-join("|")}</td>			<!-- is that the best way to deal with multi-valued fields in CSV? -->
 			<td>{
 				(descendant::subject => string-join("|"), occupation => string-join("|"))[1]
 				}</td>
@@ -74,7 +75,8 @@
 			<td>{
 				(descendant::extent => string-join("|"), wordCount)[1]
 			}</td>
-			<td>{descendant::spatial => string-join("|")}</td>
+			<td>{descendant::spatial/value => string-join("|")}</td>
+			<td>{descendant::description[not(.[@type="open_fulltext"])]/value}</td>
 			<td>{
 				(abstract, descendant::*[local-name()="abstract"])[1]
 				}</td>
