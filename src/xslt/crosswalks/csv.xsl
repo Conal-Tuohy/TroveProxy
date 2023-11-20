@@ -61,7 +61,7 @@
 			<td>{ (category,descendant::type[@type="category"]/value => string-join("|"))[1]
 				}</td>
 			<td>{
-				(title/title, isPartOf/value =>string-join("|"))[1]
+				(title/title, descendant::isPartOf/value =>string-join("|"))[1]
 			}</td>
 			<td>{ (page,descendant::bibliographicCitation/value => string-join("; "))[1]
 				}</td>
