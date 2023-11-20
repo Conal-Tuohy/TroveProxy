@@ -14,7 +14,7 @@
 				<!-- the corpus may continue on another page of Trove API results -->
 				<xsl:copy-of select="@next"/>
 				<!-- TODO expand to cover all Trove's content, not just newspaper articles -->
-				<xsl:apply-templates select="article"/>
+				<xsl:apply-templates select="article|work|people"/>
 			</teiCorpus>
 		</xsl:where-populated>
 	</xsl:template>
@@ -55,8 +55,65 @@
 		</TEI>
 	</xsl:template>
 
-	<xsl:template match="work">
+	<xsl:template match="work/version">
 
+		<TEI n="{@id}">
+			<teiHeader>
+				<fileDesc>
+					<titleStmt>
+						<title>{record/metadata/dc/title}</title>
+					</titleStmt>
+					<publicationStmt>
+						<publisher>{substring-after(record[1]/metadata/dc/publisher, " : ")}</publisher>
+						<pubPlace>{substring-before(record[1]/metadata/dc/publisher, " : ")}</pubPlace>
+						<date>{record[1]/metadata/dc/issued/value||record[1]/metadata/dc/date/value}</date>
+						<availability>
+							<p></p>
+						</availability>
+						<ptr target="{identifier}"/>
+					</publicationStmt>
+
+				</fileDesc>
+			</teiHeader>
+			<xsl:if test="record[1]/metadata/dc/description[@type='open_fulltext']">
+				<text>
+					<body>
+						<xsl:apply-templates select="record[1]/metadata/dc/description[@type='open_fulltext']"/>
+					</body>
+				</text>
+			</xsl:if>
+		</TEI>
+	</xsl:template>
+
+	<xsl:template match="people">
+
+		<TEI n="{@id}">
+			<teiHeader>
+				<fileDesc>
+					<titleStmt>
+						<title>{primaryName}</title>
+					</titleStmt>
+					<!--<publicationStmt>
+						<publisher>{substring-after(record[1]/metadata/dc/publisher, " : ")}</publisher>
+						<pubPlace>{substring-before(record[1]/metadata/dc/publisher, " : ")}</pubPlace>
+						<date>{record[1]/metadata/dc/issued/value||record[1]/metadata/dc/date/value}</date>
+						<availability>
+							<p></p>
+						</availability>
+						<ptr target="{identifier}"/>
+					</publicationStmt>-->
+
+				</fileDesc>
+			</teiHeader>
+			<!--<xsl:if test="record[1]/metadata/dc/description[@type='open_fulltext']">
+				<text>
+					<body>
+						<xsl:apply-templates select="record[1]/metadata/dc/description[@type='open_fulltext']"/>
+					</body>
+				</text>
+			</xsl:if>-->
+			<xsl:copy-of select="."/>
+		</TEI>
 	</xsl:template>
 
 	<!-- convert the unnamespaced Trove p element into a TEI p -->

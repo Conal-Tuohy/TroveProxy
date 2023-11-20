@@ -83,7 +83,8 @@
 			<updated>{
 				(: the date of the last correction, or if that's missing, the publication date:)
 				(lastCorrection/lastupdated, date)[1] 
-		   	}</updated>
+			}</updated>
+			<xsl:copy-of select="."/>
 			<summary>{snippet}</summary>
 			<category term="{//query}"/>
 			<category term="{type}"/>
