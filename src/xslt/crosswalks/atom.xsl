@@ -24,9 +24,9 @@
 	<!-- newspaper articles -->
 	<xsl:template match="article">
 		<entry>
-			<title>{heading}</title>
+			<title>{heading, 'from', concat(title/title,'; ',date)}</title>
 			<link rel="self" href="{@url}"/>
-			<link rel="alternative" href="{troveUrl}"/>
+			<link rel="alternate" href="{troveUrl}"/>
 			<id>{@url}</id>
 			<updated>{
 				(: the date of the last correction, or if that's missing, the publication date:)
@@ -40,7 +40,10 @@
 					<xsl:value-of select="substring(articleText,1,150)"/>
 				</xsl:if>
 			</summary>
-			<category term="{//query}"/>
+			<content src='{@url}'/>
+			<xsl:if test="//query">
+				<category term="{'query:',//query}"/>
+			</xsl:if>
 			<!--Add Tags as Category + keywords as category-->
 			<category term="{category}"/>
 			<xsl:for-each select="tag">
@@ -55,15 +58,23 @@
 		<entry>
 			<title>{title}</title>
 			<link rel="self" href="{@url}"/>
-			<link rel="alternative" href="{troveUrl}"/>
+			<link rel="alternate" href="{troveUrl}"/>
 			<id>{@url}</id>
 			<updated>{
 				(: the date of the last correction, or if that's missing, the publication date:)
-				(lastCorrection/lastupdated, date)[1] 
+				(lastCorrection/lastupdated, date, issued/value)[1] 
 		   	}</updated>
-			<summary>{snippet}</summary>
-			<category term="{//query}"/>
-			<category term="{Type}"/>
+			<summary>{
+				(abstract, descendant::description[not(./@type='open_fulltext')])[1]
+				}</summary>
+				<content src="{@url}"/>
+			<xsl:if test="//query">
+				<category term="{'query:',//query}"/>
+			</xsl:if>
+			<category term="{type}"/>
+			<xsl:for-each select=".//type[@type='category']">
+				<category term="{value}"/>
+			</xsl:for-each>
 			<xsl:for-each select="subject">
 				<category term="{.}"/>
 			</xsl:for-each>
@@ -78,15 +89,17 @@
 		<entry>
 			<title>{primaryName}</title>
 			<link rel="self" href="{@url}"/>
-			<link rel="alternative" href="{troveUrl}"/>
+			<link rel="alternate" href="{troveUrl}"/>
 			<id>{@url}</id>
 			<updated>{
-				(: the date of the last update:)
-				occupation
+				(: the date of the last update:) (descendant::*[local-name()="maintenanceEvent"][last()]//@standardDateTime,current-dateTime())[1]
 		   	}</updated>
-			<xsl:copy-of select="."/>
-			<summary>{snippet}</summary>
-			<category term="{//query}"/>
+			<!--<xsl:copy-of select="."/>-->
+			<summary>{descendant::*[local-name()="abstract"]}</summary>
+			<content src="{@url}"/>
+			<xsl:if test="//query">
+				<category term="{'query:',//query}"/>
+			</xsl:if>
 			<category term="{type}"/>
 			<xsl:for-each select="occupation">
 				<category term="{.}"/>
