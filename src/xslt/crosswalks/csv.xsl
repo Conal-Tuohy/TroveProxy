@@ -56,7 +56,10 @@
 				(descendant::creator/name => string-join("|"), contributor => string-join("|"), parent::contributor => string-join("|"))[1]
 				}</td>
 			<td>{
-				(date,descendant::issued, descendant::*[local-name()="existDates"][not(ancestor::*[local-name()="alternativeSet"])]//@standardDate => string-join("/"))[1]
+				(date,descendant::issued, 
+				(:Pulls data from top level people records only rather than all individual records:)
+				descendant::*[local-name()="existDates"][not(ancestor::*[local-name()="alternativeSet"])]//@standardDate => string-join("/"))[1]
+				
 			}</td>
 			<td>{descendant::publisher => string-join("|")}</td>
 			<td>{ (category,descendant::type[@type="category"]/value => string-join("|"))[1]
