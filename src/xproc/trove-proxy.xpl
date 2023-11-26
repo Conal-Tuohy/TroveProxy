@@ -29,24 +29,42 @@
 	
 	<p:import href="xproc-z-library.xpl"/>
 	
-	<p:variable name="request-uri" select="/c:request/@href"/>
+	<!--<p:variable name="request-uri" select="/c:request/@href"/>-->
 	
 	<p:documentation>
-		Parse the request URI
+		Parses an HTTP request (<c:request/> element) received by the proxy.
+		The result document is the same <c:request/> with two additional child <c:param-set/> elements,
+		one containing the request URI parsed into its main components, and the other containing
+		the set of parameters in the query portion of the URI.
+		e.g.
+		<c:request href="http://localhost:8080" method="get">
+			<c:param-set xml:id="uri">
+				<c:param name="scheme" value="http or https"/>
+				<c:param name="host" value="the host name"/>
+				<c:param name="port" value="either a port number, or blank"/>
+				<c:param name="path" value="the component of the request URI preceding any '?' character"/>
+				<c:param name="query" value="the query portion of the URI"/>
+			</c:param-set>
+			<c:param-set xml:id="parameters">
+				<c:param name="q" value="Mr Right"/>
+				<c:param name="bulkHarvest" value="true"/>
+				<c:param name="key" value="XXXXXXXXXX-1234567890-ABCDEFGHIJ"/>
+				<c:param name="category" value="newspaper"/>
+				<c:param name="category" value="book"/>
+			</c:param-set>
+			<c:header name="accept" value="application/xml"/>
+			<c:header name="X-API-KEY" value="XXXXXXXXXX-1234567890-ABCDEFGHIJ"/>
+		</c:request>
 	</p:documentation>
 	<z:parse-request name="parsed-request"/>
 
-	<!--
-	TODO process the request parameters
-	the make-trove-http-request step should strip out any request parameters directed at the proxy so they don't get sent on to trove
-	we should also remove any "encoding" parameter since we're always requesting XML (and using an Accept header to do so)
-	"key" parameter should be stripped out of the request URI sent to Trove, since we will send it via an X-API-KEY header
-	questions:
-		should the proxy override the "encoding" parameter used by trove and extend it e.g. to include new values "tei", "atom", etc?
-		or define its own parameter? e.g. proxy-output-format="tei"
-	-->
-	<p:group name="proxy-request">
-		
+	<z:proxy-request/>
+
+	<p:declare-step name="proxy-request" type="z:proxy-request">
+		<p:input port="source"/>
+		<p:output port="result"/>
+		<!-- the URI of the request made to this XProc pipeline -->
+		<p:variable name="request-uri" select="/c:request/@href"/>
 		<!-- the base URI of the upstream API -->
 		<p:variable name="upstream-base-uri" select=" 'https://api.trove.nla.gov.au/' "/>
 		<!-- regular expression to parse the request URI -->
@@ -143,7 +161,7 @@
 				<p:document href="../xslt/make-proxy-http-response.xsl"/>
 			</p:input>
 		</p:xslt>
-	</p:group>
+	</p:declare-step>
 	
 	<p:declare-step name="serialize" type="z:serialize">
 		<p:documentation>

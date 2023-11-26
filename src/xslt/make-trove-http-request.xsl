@@ -2,6 +2,13 @@
 	<!-- converts an HTTP request received by the proxy into an HTTP request ready to be forwarded to Trove -->  
 	<xsl:mode on-no-match="shallow-copy"/>
 	
+
+	<!--
+	strip out any request parameters directed at the proxy so they don't get sent on to trove
+	we should also remove any "encoding" parameter since we're always requesting XML (and using an Accept header to do so)
+	"key" parameter should be stripped out of the request URI sent to Trove, since we will send it via an X-API-KEY header
+	-->	
+	
 	<!-- 
 		TODO at least some of these URI variables need to be defined in the calling XProc pipeline since they'll be needed
 		to convert URIs in the Trove response into URIs referring to the proxy service
@@ -11,7 +18,7 @@
 	<xsl:variable name="upstream-base-uri" select=" 'https://api.trove.nla.gov.au/' "/>
 	<!-- regular expression to parse the request URI -->
 	<xsl:variable name="uri-parser" select=" '(.*?//.*?/proxy/)(.*)' "/>
-	<xsl:variable name="proxy-base-uri" select="replace(/c:request/@href, $uri-parser, '$1')"/>
+	<!--<xsl:variable name="proxy-base-uri" select="replace(/c:request/@href, $uri-parser, '$1')"/>-->
 	<xsl:variable name="relative-uri" select="replace(/c:request/@href, $uri-parser, '$2')"/>
 
 	<xsl:template match="/c:request">

@@ -516,8 +516,10 @@
 			<p:pipe step="dump" port="source"/>
 		</p:output>
 		<p:option name="href" required="true"/>
+		<p:option name="indent" select=" 'false' "/>
 		<p:store>
 			<p:with-option name="href" select="$href"/>
+			<p:with-option name="indent" select="$indent"/>
 		</p:store>
 	</p:declare-step>
 	
