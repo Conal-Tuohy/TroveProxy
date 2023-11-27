@@ -57,9 +57,46 @@
 		</c:request>
 	</p:documentation>
 	<z:parse-request name="parsed-request"/>
+	
+	<!--debug-->
+	<z:dump href="/tmp/parsed-request.xml" indent="true"/>
+	
+	<p:choose name="generate-either-citation-metadata-or-query-results">
+		<p:variable name="proxy-metadata-format" select="/c:request/c:param-set[@xml:id='parameters']/c:param[@name='proxy-metadata-format']/@value"/>
+		<p:when test="$proxy-metadata-format">
+			<z:generate-citation>
+				<p:with-option name="metadata-format" select="$proxy-metadata-format"/>
+			</z:generate-citation>
+		</p:when>
+		<p:otherwise>
+			<z:proxy-request/>
+		</p:otherwise>
+	</p:choose>
 
-	<z:proxy-request/>
-
+	<p:declare-step name="generate-citation" type="z:generate-citation">
+		<p:documentation>
+			Performs a format crosswalk to the desired format by applying a conventionally named stylesheet:
+			If the $metadata-format option equals "x" then the stylesheet "../xslt/citation-formats/x.xsl" will be applied.
+			If the $metadata-format option is not supplied, then the source data will be returned untransformed.
+		</p:documentation>
+		<p:input port="source"/>
+		<p:output port="result"/>
+		<p:option name="metadata-format" required="true"/>
+		<p:documentation>Apply a crosswalk to the request to return it as a citation in the specified format</p:documentation>
+		<p:load name="crosswalk">
+			<p:with-option name="href" select="concat('../xslt/metadata-formats/', $metadata-format, '.xsl')"/>
+		</p:load>
+		<p:xslt name="transformation">
+			<p:input port="parameters"><p:empty/></p:input>
+			<p:input port="source">
+				<p:pipe step="generate-citation" port="source"/>
+			</p:input>
+			<p:input port="stylesheet">
+				<p:pipe step="crosswalk" port="result"/>
+			</p:input>
+		</p:xslt>
+	</p:declare-step>
+	
 	<p:declare-step name="proxy-request" type="z:proxy-request">
 		<p:input port="source"/>
 		<p:output port="result"/>
@@ -169,7 +206,7 @@
 		</p:documentation>
 		<p:input port="source"/>
 		<p:output port="result"/>
-		<p:option name="proxy-format"/>
+		<p:option name="proxy-format" required="true"/>
 		<p:choose>
 			<p:when test="$proxy-format = 'csv'">
 				<p:xslt name="serialize-csv">

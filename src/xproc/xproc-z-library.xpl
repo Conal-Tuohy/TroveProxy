@@ -61,7 +61,7 @@
 							<c:param-set>
 								<xsl:analyze-string 
 									select="/c:request/@href" 
-									regex="^(.*:)//([^:/]+)(:[0-9]+)?(.*?)(\?.*)?$">
+									regex="^([^:]*:)//([^:/]+)(:[0-9]+)?(.*?)(\?.*)?$">
 									<!-- TODO check above regex - is "[^:/]+" correct? -->
 									<xsl:matching-substring>
 										<c:param name="scheme" value="{regex-group(1)}"/>
