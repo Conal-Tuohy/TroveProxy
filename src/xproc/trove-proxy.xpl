@@ -59,7 +59,9 @@
 	<z:parse-request name="parsed-request"/>
 	
 	<!--debug-->
+	<!--
 	<z:dump href="/tmp/parsed-request.xml" indent="true"/>
+	-->
 	
 	<p:choose name="generate-either-citation-metadata-or-query-results">
 		<p:variable name="proxy-metadata-format" select="/c:request/c:param-set[@xml:id='parameters']/c:param[@name='proxy-metadata-format']/@value"/>
@@ -122,9 +124,11 @@
 			Parameters which are directed at the proxy server itself, rather than at the Trove API, such as proxy-format, 
 			are recorded so that they can be appended to URIs returned in Trove responses
 		</p:documentation>
-		<p:variable name="proxy-parameters" select="
+		<p:variable name="proxy-parameter-string" select="
 			string-join(
-				/c:request/c:param-set[@xml:id='parameters']/c:param[starts-with(@name, 'proxy-')]/concat(@name, '=', @value),
+				/c:request/c:param-set[@xml:id='parameters'] (: the URI parameters :)
+					/c:param[starts-with(@name, 'proxy-')][@value != ''] (: ... whose name starts with 'proxy-' and which have a non-null value :)
+						/concat(@name, '=', @value), (: stick the name and value together :)
 				'&amp;'
 			)
 		"/>
@@ -137,10 +141,16 @@
 			</p:input>
 		</p:xslt>
 		
+		<!--
 		<z:dump href="/tmp/trove-http-request.xml"/>
+		-->
 		
 		<p:documentation>Actually issue the request to the Trove API and receive a response</p:documentation>
 		<p:http-request name="issue-request-to-trove-api"/>
+		
+		<!--
+		<z:dump href="/tmp/trove-http-response.xml"/>
+		-->
 		
 		<p:documentation>Fix corrigible errors in the response received from Trove</p:documentation>
 		<p:xslt name="fix-trove-response">
@@ -157,7 +167,7 @@
 			<p:with-param name="request-uri" select="$request-uri"/>
 			<p:with-param name="proxy-base-uri" select="$proxy-base-uri"/>
 			<p:with-param name="upstream-base-uri" select="$upstream-base-uri"/>
-			<p:with-param name="proxy-parameters" select="$proxy-parameters"/>
+			<p:with-param name="proxy-parameter-string" select="$proxy-parameter-string"/>
 			<p:input port="stylesheet">
 				<p:document href="../xslt/rewrite-trove-uris-as-proxy-uris.xsl"/>
 			</p:input>
