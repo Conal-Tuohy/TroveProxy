@@ -71,7 +71,7 @@
 					else
 						'?'
 				)
-			}&gt;; rel=describes"/>
+			}&gt;; rel=describedby"/>
 			<xsl:variable name="next-links" select="//*/@next"/>
 			<xsl:for-each select="$next-links">
 				<xsl:variable name="url">
