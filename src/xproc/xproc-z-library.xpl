@@ -522,5 +522,50 @@
 			<p:with-option name="indent" select="$indent"/>
 		</p:store>
 	</p:declare-step>
-	
+
+	<p:declare-step name="parse-request" type="z:parse-request">
+		<!-- TODO decide if the c:param-set[@xml:id='uri'] is even needed in the output -->
+		<p:documentation>
+			Parses an HTTP request (<c:request/> element) received by the proxy.
+			The result document is the same <c:request/> with two additional child <c:param-set/> elements,
+			one containing the request URI parsed into its main components, and the other containing
+			the set of parameters in the query portion of the URI.
+			e.g.
+			<c:request href="http://localhost:8080" method="get">
+				<c:param-set xml:id="uri">
+					<c:param name="scheme" value="http or https"/>
+					<c:param name="host" value="the host name"/>
+					<c:param name="port" value="either a port number, or blank"/>
+					<c:param name="path" value="the component of the request URI preceding any '?' character"/>
+					<c:param name="query" value="the query portion of the URI"/>
+				</c:param-set>
+				<c:param-set xml:id="parameters">
+					<c:param name="q" value="Mr Right"/>
+					<c:param name="bulkHarvest" value="true"/>
+					<c:param name="key" value="XXXXXXXXXX-1234567890-ABCDEFGHIJ"/>
+					<c:param name="category" value="newspaper"/>
+					<c:param name="category" value="book"/>
+				</c:param-set>
+				<c:header name="accept" value="application/xml"/>
+				<c:header name="X-API-KEY" value="XXXXXXXXXX-1234567890-ABCDEFGHIJ"/>
+			</c:request>
+		</p:documentation>
+		<p:input port="source"/>
+		<p:output port="result"/>
+		<z:parse-request-uri unproxify="true"/>
+		<p:add-attribute name="uri" match="/*" attribute-name="xml:id" attribute-value="uri"/>
+		<p:www-form-urldecode>
+			<p:with-option name="value" select="substring-after(/c:param-set/c:param[@name='query']/@value, '?')"/>
+		</p:www-form-urldecode>
+		<p:add-attribute name="parameters" match="/*" attribute-name="xml:id" attribute-value="parameters"/>
+		<p:insert name="parsed-request" match="/*" position="first-child">
+			<p:input port="source">
+				<p:pipe step="parse-request" port="source"/>
+			</p:input>
+			<p:input port="insertion">
+				<p:pipe step="uri" port="result"/>
+				<p:pipe step="parameters" port="result"/>
+			</p:input>
+		</p:insert>
+	</p:declare-step>	
 </p:library>
