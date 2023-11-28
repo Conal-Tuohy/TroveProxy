@@ -2,8 +2,10 @@
 FROM tomcat:9.0.76-jdk21-openjdk-slim
 # Install the XProc-Z servlet
 COPY xproc-z.war /xproc-z.war
-# Copy the Tomcat configuration file which registers the xproc-z.war web app and points it at its main XProc pipeline
+# Copy the Tomcat configuration file which registers the proxy and harvester XProc pipelines as
+# two distinct instances of the xproc-z.war web app
 COPY tomcat-config/proxy.xml /usr/local/tomcat/conf/Catalina/localhost/
+COPY tomcat-config/harvester.xml /usr/local/tomcat/conf/Catalina/localhost/
 # copy the XProc and XSLT source code of the proxy service
 COPY src /src
 # Tomcat is listening on port 8080
