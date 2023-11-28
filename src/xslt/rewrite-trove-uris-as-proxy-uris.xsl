@@ -62,6 +62,16 @@
 			<xsl:copy-of select="@*"/>
 			<!-- TODO actually canonicalise this URI, removing any API key parameter from it, sorting the params in alpha order, etc -->
 			<c:header name="Link" value="&lt;{$request-uri}&gt;; rel=canonical"/>
+			<!-- add link to metadata -->
+			<c:header name="Link" value="&lt;{
+				string-join(
+					($request-uri, 'proxy-metadata-format=ro-crate'), 
+					if (contains($request-uri, '?')) then
+						'&amp;'
+					else
+						'?'
+				)
+			}&gt;; rel=describes"/>
 			<xsl:variable name="next-links" select="//*/@next"/>
 			<xsl:for-each select="$next-links">
 				<xsl:variable name="url">
