@@ -161,6 +161,32 @@
 		</p:identity>
 	</p:pipeline>
 	
+	<p:pipeline type="z:method-not-allowed">
+		<p:option name="method" required="true"/>
+		<p:template>
+			<p:with-param name="method" select="$method"/>
+			<p:input port="template">
+				<p:inline>
+					<c:response status="405">
+						<c:header name="X-Powered-By" value="XProc using XML Calabash"/>
+						<c:header name="Server" value="XProc-Z"/>
+						<c:body content-type="application/xhtml+xml">
+							<html xmlns="http://www.w3.org/1999/xhtml">
+								<head>
+									<title>Method Not Allowed</title>
+								</head>
+								<body>
+									<h1>Method Not Allowed</h1>
+									<p>The {$method} method is not allowed on this resource.</p>
+								</body>
+							</html>
+						</c:body>
+					</c:response>
+				</p:inline>
+			</p:input>
+		</p:template>
+	</p:pipeline>
+
 	<p:pipeline type="z:parse-parameters">
 		<p:xslt>
 			<p:input port="stylesheet">

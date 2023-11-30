@@ -25,7 +25,9 @@
 			else (: parameter missing; effective value = 1 :)
 				'1' 
 		"/>
+		<!--
 		<xsl:message expand-text="true">parameters: {$parameters}, parameter: {$proxy-max-requests-parameter}, effective value: {$max-requests}</xsl:message>
+		-->
 
 		<!-- output a URL unless this is a "next" url and max-requests has already fallen to 1 -->
 		<xsl:if test="not(local-name() = 'next' and $max-requests = '1')">

@@ -57,7 +57,23 @@
 		</c:request>
 	</p:documentation>
 	<z:parse-request name="parsed-request"/>
-	
+	<p:group name="access-log">
+		<cx:message>
+			<p:with-option name="message" select="
+				string-join(
+					(
+						'proxy:', 
+						upper-case(/c:request/@method), 
+						/c:request/@href
+(:						/c:request/c:param-set[@xml:id='uri']/c:param[@name='path']/@value,
+						for $p in /c:request/c:param-set[@xml:id='parameters']/c:param return $p/@name || '=' || $p/@value
+:)
+					),
+					' '
+				)
+			"/>
+		</cx:message>
+	</p:group>
 	<!--debug-->
 	<!--
 	<z:dump href="/tmp/parsed-request.xml" indent="true"/>
@@ -142,15 +158,15 @@
 		</p:xslt>
 		
 		<!--
-		<z:dump href="/tmp/trove-http-request.xml"/>
 		-->
+		<z:dump href="/tmp/trove-http-request.xml"/>
 		
 		<p:documentation>Actually issue the request to the Trove API and receive a response</p:documentation>
 		<p:http-request name="issue-request-to-trove-api"/>
 		
 		<!--
-		<z:dump href="/tmp/trove-http-response.xml"/>
 		-->
+		<z:dump href="/tmp/trove-http-response.xml"/>
 		
 		<p:documentation>Fix corrigible errors in the response received from Trove</p:documentation>
 		<p:xslt name="fix-trove-response">

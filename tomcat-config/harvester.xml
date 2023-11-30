@@ -1,3 +1,4 @@
 <Context docBase='/xproc-z.war'>
 	<Parameter name="xproc-z.main" value="/src/xproc/trove-proxy-harvester.xpl" override="false"/>
+	<Parameter name="harvester.harvest-directory" value="/var/lib/harvest/" />
 </Context>
