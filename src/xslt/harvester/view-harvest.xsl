@@ -12,6 +12,10 @@
 				<meta http-equiv="Content-Type" content="application/xhtml+xml; charset=utf-8"/>
 				<title>{@name}</title>
 				<style xsl:expand-text="false">
+					ul.files {
+						column-width: 10em;
+						/*column-rule: 1px solid rgb(75, 70, 74);*/
+					}
 					body {
 						font-family: sans-serif;
 					}
@@ -48,7 +52,7 @@
 				<tr><th>started</th><td>{format-dateTime(@started, $date-format)}</td></tr>
 				<tr><th>updated</th><td>{format-dateTime(@last-updated, $date-format)}</td></tr>
 			</table>
-			<p class="table-footnote"><a href="status.xml">Download status file</a></p>
+			<p class="table-footnote"><a href="status.xml">view status as xml</a></p>
 		</div>
 	</xsl:template>
 	

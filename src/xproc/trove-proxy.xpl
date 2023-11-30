@@ -131,24 +131,14 @@
 		<p:documentation>The output format for the proxy</p:documentation>
 		<p:variable name="proxy-format" select="/c:request/c:param-set[@xml:id='parameters']/c:param[@name='proxy-format']/@value"/>
 		
+		<p:documentation>Remember the Trove API key parameter so we can reuse it in 'next' links</p:documentation>
+		<p:variable name="key" select="/c:request/c:param-set[@xml:id='parameters']/c:param[@name='key']/@value"/>
+		
 		<p:documentation>
 			Set to 'true' to include related eac-cpf from People Australia into Trove 'people' records
 		</p:documentation>
 		<p:variable name="proxy-include-people-australia" select="/c:request/c:param-set[@xml:id='parameters']/c:param[@name='proxy-include-people-australia']/@value"/>
-		
-		<p:documentation>
-			Parameters which are directed at the proxy server itself, rather than at the Trove API, such as proxy-format, 
-			are recorded so that they can be appended to URIs returned in Trove responses
-		</p:documentation>
-		<p:variable name="proxy-parameter-string" select="
-			string-join(
-				/c:request/c:param-set[@xml:id='parameters'] (: the URI parameters :)
-					/c:param[starts-with(@name, 'proxy-')][@value != ''] (: ... whose name starts with 'proxy-' and which have a non-null value :)
-						/concat(@name, '=', @value), (: stick the name and value together :)
-				'&amp;'
-			)
-		"/>
-		
+
 		<p:documentation>Take the request received from the client, and transform it into a request directed at the Trove API</p:documentation>
 		<p:xslt name="make-trove-http-request">
 			<p:input port="parameters"><p:empty/></p:input>
@@ -183,7 +173,7 @@
 			<p:with-param name="request-uri" select="$request-uri"/>
 			<p:with-param name="proxy-base-uri" select="$proxy-base-uri"/>
 			<p:with-param name="upstream-base-uri" select="$upstream-base-uri"/>
-			<p:with-param name="proxy-parameter-string" select="$proxy-parameter-string"/>
+			<p:with-param name="key" select="$key"/>
 			<p:input port="stylesheet">
 				<p:document href="../xslt/rewrite-trove-uris-as-proxy-uris.xsl"/>
 			</p:input>
