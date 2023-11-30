@@ -1,6 +1,6 @@
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="3.0"
 	xmlns="http://www.tei-c.org/ns/1.0" expand-text="yes">
-
+ 
 	<xsl:template match="response">
 		<teiCorpus n="{query}">
 			<xsl:apply-templates/>
@@ -14,7 +14,7 @@
 				<!-- the corpus may continue on another page of Trove API results -->
 				<xsl:copy-of select="@next"/>
 				<!-- TODO expand to cover all Trove's content, not just newspaper articles -->
-				<xsl:apply-templates select="article|work|people"/>
+				<xsl:apply-templates select="article|work|version"/>
 			</teiCorpus>
 		</xsl:where-populated>
 	</xsl:template>
@@ -55,7 +55,8 @@
 		</TEI>
 	</xsl:template>
 
-	<xsl:template match="work/version">
+	
+	<xsl:template match="version">
 
 		<TEI n="{@id}">
 			<teiHeader>
@@ -64,9 +65,9 @@
 						<title>{record/metadata/dc/title}</title>
 					</titleStmt>
 					<publicationStmt>
-						<publisher>{substring-after(record[1]/metadata/dc/publisher, " : ")}</publisher>
+						<publisher>{descendant::publisher}</publisher>
 						<pubPlace>{substring-before(record[1]/metadata/dc/publisher, " : ")}</pubPlace>
-						<date>{record[1]/metadata/dc/issued/value||record[1]/metadata/dc/date/value}</date>
+						<date>{(descendant::issued/value,descendant::date/value,descendant::bibliographicCitation[@type='dateIssued']/value)[1]}</date>
 						<availability>
 							<p></p>
 						</availability>
@@ -75,10 +76,10 @@
 
 				</fileDesc>
 			</teiHeader>
-			<xsl:if test="record[1]/metadata/dc/description[@type='open_fulltext']">
+			<xsl:if test="descendant::description[@type='open_fulltext'][1]">
 				<text>
 					<body>
-						<xsl:apply-templates select="record[1]/metadata/dc/description[@type='open_fulltext']"/>
+						{descendant::description[@type='open_fulltext'][1]}
 					</body>
 				</text>
 			</xsl:if>
