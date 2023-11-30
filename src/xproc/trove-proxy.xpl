@@ -57,9 +57,27 @@
 		</c:request>
 	</p:documentation>
 	<z:parse-request name="parsed-request"/>
-	
+	<p:group name="access-log">
+		<cx:message>
+			<p:with-option name="message" select="
+				string-join(
+					(
+						'proxy:', 
+						upper-case(/c:request/@method), 
+						/c:request/@href
+(:						/c:request/c:param-set[@xml:id='uri']/c:param[@name='path']/@value,
+						for $p in /c:request/c:param-set[@xml:id='parameters']/c:param return $p/@name || '=' || $p/@value
+:)
+					),
+					' '
+				)
+			"/>
+		</cx:message>
+	</p:group>
 	<!--debug-->
+	<!--
 	<z:dump href="/tmp/parsed-request.xml" indent="true"/>
+	-->
 	
 	<p:choose name="generate-either-citation-metadata-or-query-results">
 		<p:variable name="proxy-metadata-format" select="/c:request/c:param-set[@xml:id='parameters']/c:param[@name='proxy-metadata-format']/@value"/>
@@ -122,9 +140,11 @@
 			Parameters which are directed at the proxy server itself, rather than at the Trove API, such as proxy-format, 
 			are recorded so that they can be appended to URIs returned in Trove responses
 		</p:documentation>
-		<p:variable name="proxy-parameters" select="
+		<p:variable name="proxy-parameter-string" select="
 			string-join(
-				/c:request/c:param-set[@xml:id='parameters']/c:param[starts-with(@name, 'proxy-')]/concat(@name, '=', @value),
+				/c:request/c:param-set[@xml:id='parameters'] (: the URI parameters :)
+					/c:param[starts-with(@name, 'proxy-')][@value != ''] (: ... whose name starts with 'proxy-' and which have a non-null value :)
+						/concat(@name, '=', @value), (: stick the name and value together :)
 				'&amp;'
 			)
 		"/>
@@ -137,10 +157,16 @@
 			</p:input>
 		</p:xslt>
 		
+		<!--
+		-->
 		<z:dump href="/tmp/trove-http-request.xml"/>
 		
 		<p:documentation>Actually issue the request to the Trove API and receive a response</p:documentation>
 		<p:http-request name="issue-request-to-trove-api"/>
+		
+		<!--
+		-->
+		<z:dump href="/tmp/trove-http-response.xml"/>
 		
 		<p:documentation>Fix corrigible errors in the response received from Trove</p:documentation>
 		<p:xslt name="fix-trove-response">
@@ -157,7 +183,7 @@
 			<p:with-param name="request-uri" select="$request-uri"/>
 			<p:with-param name="proxy-base-uri" select="$proxy-base-uri"/>
 			<p:with-param name="upstream-base-uri" select="$upstream-base-uri"/>
-			<p:with-param name="proxy-parameters" select="$proxy-parameters"/>
+			<p:with-param name="proxy-parameter-string" select="$proxy-parameter-string"/>
 			<p:input port="stylesheet">
 				<p:document href="../xslt/rewrite-trove-uris-as-proxy-uris.xsl"/>
 			</p:input>
@@ -257,52 +283,6 @@
 		</p:choose>
 	</p:declare-step>
 
-	<p:declare-step name="parse-request" type="z:parse-request">
-		<!-- TODO decide if the c:param-set[@xml:id='uri'] is even needed in the output -->
-		<p:documentation>
-			Parses an HTTP request (<c:request/> element) received by the proxy.
-			The result document is the same <c:request/> with two additional child <c:param-set/> elements,
-			one containing the request URI parsed into its main components, and the other containing
-			the set of parameters in the query portion of the URI.
-			e.g.
-			<c:request href="http://localhost:8080" method="get">
-				<c:param-set xml:id="uri">
-					<c:param name="scheme" value="http or https"/>
-					<c:param name="host" value="the host name"/>
-					<c:param name="port" value="either a port number, or blank"/>
-					<c:param name="path" value="the component of the request URI preceding any '?' character"/>
-					<c:param name="query" value="the query portion of the URI"/>
-				</c:param-set>
-				<c:param-set xml:id="parameters">
-					<c:param name="q" value="Mr Right"/>
-					<c:param name="bulkHarvest" value="true"/>
-					<c:param name="key" value="XXXXXXXXXX-1234567890-ABCDEFGHIJ"/>
-					<c:param name="category" value="newspaper"/>
-					<c:param name="category" value="book"/>
-				</c:param-set>
-				<c:header name="accept" value="application/xml"/>
-				<c:header name="X-API-KEY" value="XXXXXXXXXX-1234567890-ABCDEFGHIJ"/>
-			</c:request>
-		</p:documentation>
-		<p:input port="source"/>
-		<p:output port="result"/>
-		<z:parse-request-uri unproxify="true"/>
-		<p:add-attribute name="uri" match="/*" attribute-name="xml:id" attribute-value="uri"/>
-		<p:www-form-urldecode>
-			<p:with-option name="value" select="substring-after(/c:param-set/c:param[@name='query']/@value, '?')"/>
-		</p:www-form-urldecode>
-		<p:add-attribute name="parameters" match="/*" attribute-name="xml:id" attribute-value="parameters"/>
-		<p:insert name="parsed-request" match="/*" position="first-child">
-			<p:input port="source">
-				<p:pipe step="parse-request" port="source"/>
-			</p:input>
-			<p:input port="insertion">
-				<p:pipe step="uri" port="result"/>
-				<p:pipe step="parameters" port="result"/>
-			</p:input>
-		</p:insert>
-	</p:declare-step>
-	
 	<p:declare-step name="enhance-people-data" type="z:enhance-people-data">
 		<p:option name="include-people-australia"/>
 		<p:documentation>

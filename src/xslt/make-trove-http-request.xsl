@@ -14,13 +14,6 @@
 		to convert URIs in the Trove response into URIs referring to the proxy service
 	-->
 	
-	<!-- the base URI of the upstream API -->
-	<xsl:variable name="upstream-base-uri" select=" 'https://api.trove.nla.gov.au/' "/>
-	<!-- regular expression to parse the request URI -->
-	<xsl:variable name="uri-parser" select=" '(.*?//.*?/proxy/)(.*)' "/>
-	<!--<xsl:variable name="proxy-base-uri" select="replace(/c:request/@href, $uri-parser, '$1')"/>-->
-	<xsl:variable name="relative-uri" select="replace(/c:request/@href, $uri-parser, '$2')"/>
-
 	<xsl:template match="/c:request">
 		<xsl:copy>
 			<!-- 
@@ -38,7 +31,24 @@
 	<xsl:template match="/c:request/c:param-set"/>
 
 	<xsl:template match="/c:request/@href">
-		<xsl:attribute name="href" select="concat($upstream-base-uri, $relative-uri)"/>
+		<!-- the base URI of the upstream API -->
+		<xsl:variable name="upstream-base-uri" select=" 'https://api.trove.nla.gov.au/' "/>
+	
+		<!-- regular expression to parse the request URI -->
+		<xsl:variable name="uri-parser" select=" '^(.*?//.*?/proxy/)(.*?)(\?.*)$' "/>
+		<xsl:variable name="api-path-component" select="replace(/c:request/@href, $uri-parser, '$2')"/>
+		<xsl:variable name="query-component" select="replace(/c:request/@href, $uri-parser, '$3')"/>
+		<xsl:variable name="parameters" select="$query-component => substring-after('?') => tokenize('&amp;')"/> 
+		<xsl:variable name="purified-parameters" select="$parameters[not(starts-with(., 'proxy-'))]"/>
+		<xsl:attribute name="href" select="
+			string-join(
+				(
+					concat($upstream-base-uri, $api-path-component),
+					$purified-parameters => string-join('&amp;')
+				),
+				'?'
+			)
+		"/>
 	</xsl:template>
 	
 	<!--TODO cookie management-->
