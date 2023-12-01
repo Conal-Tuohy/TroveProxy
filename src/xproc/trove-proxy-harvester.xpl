@@ -169,6 +169,9 @@
 		<p:variable name="harvests-directory" select="p:system-property('init-parameters:harvester.harvest-directory')"/>
 
 		<p:variable name="example-harvest-url" select=" 'the URL of your query' "/>
+		<file:mkdir>
+			<p:with-option name="href" select="$harvests-directory"/>
+		</file:mkdir>
 		<p:directory-list>
 			<p:with-option name="path" select="$harvests-directory"/>
 		</p:directory-list>
