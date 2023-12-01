@@ -1,7 +1,8 @@
 <xsl:stylesheet version="3.0" expand-text="yes"
 	xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
 	xmlns="http://www.w3.org/2005/Atom"
-	xmlns:c="http://www.w3.org/ns/xproc-step">
+	xmlns:c="http://www.w3.org/ns/xproc-step"
+	exclude-result-prefixes="#all">
 
 	<!-- transform Trove's XML into Atom Syndication Format -->
 	<!-- Atom: https://www.rfc-editor.org/rfc/rfc4287 -->
@@ -40,7 +41,30 @@
 					<xsl:value-of select="substring(articleText,1,150)"/>
 				</xsl:if>
 			</summary>
-			<content src='{@url}'/>
+			<!-- render article text -->
+			<!-- if no articleText then link to the trove resource, 
+			because a content element is mandatory -->
+			<xsl:choose>
+				<xsl:when test="articleText">
+					<content type="html">
+						<xsl:variable name="html">
+							<xsl:apply-templates select="articleText"/>
+						</xsl:variable>
+						<xsl:sequence select="
+							serialize(
+								$html, 
+								map{
+									'method': 'html', 
+									'html-version': 5
+								}
+							)
+						"/>
+					</content>
+				</xsl:when>
+				<xsl:otherwise>
+					<content src="{troveUrl}"/>
+				</xsl:otherwise>
+			</xsl:choose>
 			<xsl:if test="//query">
 				<category term="{'query:',//query}"/>
 			</xsl:if>
@@ -86,6 +110,8 @@
 		</entry>
 	</xsl:template>
 	<xsl:template match="people">
+		<!-- EAC elements are referenced using the local-name() functon because the EAC
+		documents sourced from People Australia data may or may not use a namespace,--> 
 		<entry>
 			<title>{primaryName}</title>
 			<link rel="self" href="{@url}"/>
@@ -108,6 +134,17 @@
 		</entry>
 	</xsl:template>
 
+	<!-- copy the Trove p element to create an HTML p element -->
+	<xsl:template match="p">
+		<xsl:copy copy-namespaces="no"><xsl:apply-templates/></xsl:copy>
+		<xsl:sequence select="codepoints-to-string(10)"/>
+	</xsl:template>
+	<!-- Trove's span elements represent typographical lines; insert an HTML br between adjacent lines -->
+	<xsl:template match="span[preceding-sibling::span]">
+		<xsl:element name="br" xmlns=""/>
+		<xsl:sequence select="codepoints-to-string(10)"/>
+		<xsl:apply-templates/>
+	</xsl:template>
 	<!-- TODO every other Trove record type -->
 
 	<!-- catch-all template to ignore any kind of record not yet explicitly crosswalked -->
