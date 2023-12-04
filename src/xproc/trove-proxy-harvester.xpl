@@ -330,15 +330,16 @@
 				</p:template>
 				<p:http-request name="data"/>
 				<p:group name="save">
+					<p:variable name="content-type" select="/c:response/c:header[lower-case(@name) = 'content-type']/@value"/>
 					<p:variable name="extension" select="
-						if (c:response/c:header[lower-case(@name) = 'content-type']/@value = 'text/csv') then 
+						if ($content-type = 'text/csv') then 
 							'.csv' 
 						else 
 							'.xml'
 					"/>
 					<p:variable name="filename" select="
 						concat(
-							format-integer($requests, '296635227'), 
+							format-integer($requests, '296635227'), (: Trove contains ~300M items :)
 							$extension
 						)
 					"/>
@@ -477,6 +478,7 @@
 					<!-- update it -->
 					<p:xslt name="update-ro-crate-metadata">
 						<p:with-param name="filename" select="$filename"/>
+						<p:with-param name="content-type" select="$content-type"/>
 						<p:input port="stylesheet">
 							<p:document href="../xslt/harvester/update-ro-crate-metadata.xsl"/>
 						</p:input>

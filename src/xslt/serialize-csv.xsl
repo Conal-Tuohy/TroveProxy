@@ -5,10 +5,6 @@
 
 	<!-- transform an HTML table into CSV -->
 	<xsl:mode on-no-match="shallow-copy"/>
-	
-	<xsl:template match="c:body/@content-type">
-		<xsl:attribute name="content-type">text/csv</xsl:attribute>
-	</xsl:template>
 
 	<xsl:template match="xhtml:table">
 		<xsl:apply-templates select=".//xhtml:tr"/>

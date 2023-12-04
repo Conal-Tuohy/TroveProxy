@@ -130,6 +130,18 @@
 		
 		<p:documentation>The output format for the proxy</p:documentation>
 		<p:variable name="proxy-format" select="/c:request/c:param-set[@xml:id='parameters']/c:param[@name='proxy-format']/@value"/>
+
+		<p:documentation>Define the appropriate MIME content-type for the output format</p:documentation>
+		<p:variable name="content-type" select="
+			if (normalize-space($proxy-format)) then 
+				map{
+					'csv': 'text/csv',
+					'tei': 'application/xml',
+					'atom': 'application/atom+xml'
+				}($proxy-format)
+			else
+				'application/xml' (: No 'proxy-format' implies Trove's native XML :)
+		"/>
 		
 		<p:documentation>Remember the Trove API key parameter so we can reuse it in 'next' links</p:documentation>
 		<p:variable name="key" select="/c:request/c:param-set[@xml:id='parameters']/c:param[@name='key']/@value"/>
@@ -210,6 +222,7 @@
 		<p:xslt name="make-proxy-http-response">
 			<p:with-param name="proxy-base-uri" select="$proxy-base-uri"/>
 			<p:with-param name="upstream-base-uri" select="$upstream-base-uri"/>
+			<p:with-param name="content-type" select="$content-type"/>
 			<p:input port="stylesheet">
 				<p:document href="../xslt/make-proxy-http-response.xsl"/>
 			</p:input>

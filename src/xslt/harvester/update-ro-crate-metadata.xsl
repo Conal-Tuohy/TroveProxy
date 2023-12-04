@@ -5,6 +5,7 @@
 	expand-text="true"
 >
 	<xsl:param name="filename"/>
+	<xsl:param name="content-type"/>
 	<xsl:mode on-no-match="shallow-copy"/>
 	<xsl:template match="c:body">
 		<xsl:copy>
@@ -26,6 +27,8 @@
 				<xsl:copy-of select="json:array[@key='hasPart']/*"/>
 				<json:map>
 					<json:string key='@id'>{$filename}</json:string>
+					<json:string key='@type'>File</json:string>
+					<json:string key='encodingFormat'>{$content-type}</json:string>
 				</json:map>
 			</json:array>
 		</xsl:copy>
