@@ -169,6 +169,9 @@
 		<p:variable name="harvests-directory" select="p:system-property('init-parameters:harvester.harvest-directory')"/>
 
 		<p:variable name="example-harvest-url" select=" 'the URL of your query' "/>
+		<file:mkdir>
+			<p:with-option name="href" select="$harvests-directory"/>
+		</file:mkdir>
 		<p:directory-list>
 			<p:with-option name="path" select="$harvests-directory"/>
 		</p:directory-list>
@@ -381,6 +384,11 @@
 						</p:template>
 					</p:for-each>
 					<p:sink/>
+					<!--
+					<p:load name="harvest-status-before-trove-query">
+						<p:with-option name="href" select="concat($harvest-directory, '/status.xml')"/>
+					</p:load>
+					-->
 					<p:load name="harvest-status-after-trove-query">
 						<p:with-option name="href" select="concat($harvest-directory, '/status.xml')"/>
 					</p:load>
@@ -411,6 +419,73 @@
 					<p:store name="save-updated-status" indent="true">
 						<p:with-option name="href" select="concat($harvest-directory, '/status.xml')"/>
 					</p:store>
+					<!-- Update RO-Crate metadata -->
+					<!-- load already-harvested RO-Crate object -->
+					<p:try>
+						<p:group>
+							<p:template name="prepare-to-load-local-ro-crate">
+								<p:with-param name="href" select="concat($harvest-directory, '/ro-crate-metadata.json')"/>
+								<p:input port="source"><p:empty/></p:input>
+								<p:input port="template">
+									<p:inline>
+										<c:request href="{$href}" method="GET" override-content-type="text/plain"/>
+									</p:inline>
+								</p:input>
+							</p:template>
+							<p:http-request/>
+							<!-- returns a c:body containing the JSON or throws not found error -->
+						</p:group>
+						<p:catch name="load-local-metadata-failed">
+							<p:try>
+								<p:group>
+									<p:template name="prepare-to-load-ro-crate-from-proxy">
+										<p:with-param name="href" select="
+											substring-before(
+												substring-after(
+													/c:response/c:header
+														[lower-case(@name)='link']
+														[@value => lower-case() => substring-after(' rel=') = 'describedby'][1]/@value,
+													'&lt;'
+												), 
+												'&gt;'
+											)
+										">
+											<p:pipe step="data" port="result"/>
+										</p:with-param>
+										<p:input port="source"><p:empty/></p:input>
+										<p:input port="template">
+											<p:inline>
+												<c:request href="{$href}" method="GET" override-content-type="text/plain"/>
+											</p:inline>
+										</p:input>
+									</p:template>
+									<p:http-request/>
+								</p:group>
+								<p:catch name="http-request-for-metadata-failed">
+									<p:identity>
+										<p:input port="source">
+											<p:pipe step="http-request-for-metadata-failed" port="error"/>
+										</p:input>
+									</p:identity>
+									<cx:message>
+										<p:with-option name="message" select="concat('Downloading ro-crate failed: ', serialize(/))"/>
+									</cx:message>
+								</p:catch>
+							</p:try>
+						</p:catch>
+					</p:try>
+					<!-- update it -->
+					<p:xslt name="update-ro-crate-metadata">
+						<p:with-param name="filename" select="$filename"/>
+						<p:input port="stylesheet">
+							<p:document href="../xslt/harvester/update-ro-crate-metadata.xsl"/>
+						</p:input>
+					</p:xslt>
+					<!-- save the updated RO-Crate file -->
+					<p:store method="text">
+						<p:with-option name="href" select="concat($harvest-directory, '/ro-crate-metadata.json')"/>
+					</p:store>
+
 					<cx:message cx:depends-on="save-updated-status" message="run-harvest saved updated status">
 						<p:input port="source"><p:empty/></p:input>
 					</cx:message>

@@ -16,8 +16,11 @@ The proxied API accepts some additional parameters:
 |Parameter name|Values|
 |------------------------|----------|
 |proxy-include-people-australia|If set to `true` then additional information about people will be added from People Australia|
-|proxy-format|Set to `tei` to return TEI XML, or `atom` to return Atom Syndication XML, or leave blank for Trove XML|
-
+|proxy-format|Set to `tei` to return TEI XML, `atom` to return Atom Syndication XML, `csv` to return Comma Separated Values, or leave blank for Trove-style XML|
+|proxy-metadata-format|Set to `ro-crate` to return an RO-Crate description of the data instead of the actual data|
+|proxy-metadata-license-uri|Set to the URL of a licence such as `https://creativecommons.org/licenses/by-nc-sa/3.0/au/`|
+|proxy-metadata-name|Provide a title for your dataset, e.g. `Scone recipes`|
+|proxy-metadata-description|Provide a description for your dataset, e.g. `A collection of scone recipes`|
 
 ## Developing
 To build the docker application, naming the image `trove-proxy`:

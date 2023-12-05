@@ -53,7 +53,7 @@
 				<xsl:variable name="json-xml">
 					<xsl:apply-templates/>
 				</xsl:variable>
-				<xsl:sequence select="xml-to-json($json-xml)"/>
+				<xsl:sequence select="xml-to-json($json-xml, map{'indent':true()})"/>
 			</c:body>
 		</c:response>
 	</xsl:template>
@@ -80,8 +80,22 @@
 				<!-- description of the root entity (the dataset) -->
 				<map>
 					<string key="@id">./</string>
-					<!-- TODO strip out the proxy-metadata-* parameters from the 'identifier' URI --> 
-					<string key="identifier">{@uri}</string>
+					<!-- strip out the proxy-metadata-format and key parameters from the 'identifier' URI --> 
+					<xsl:variable name="uri-without-query-component" select="substring-before(@href, '?')"/>
+					<xsl:variable name="parameters" select="tokenize(substring-after(@href, '?'), '&amp;')"/>
+					<xsl:variable name="output-parameters" select="
+						$parameters
+							[not(
+								substring-before(., '=') = ('key', 'proxy-metadata-format')
+							)]
+					"/>
+					<string key="identifier">{
+						concat(
+							$uri-without-query-component, 
+							'?', 
+							string-join($output-parameters, '&amp;')
+						)
+					}</string>
 					<string key="@type">Dataset</string>
 					<xsl:apply-templates select="c:param-set[@xml:id='parameters']"/>
 				</map>

@@ -4,7 +4,4 @@
 	<!-- remove any payload headers from the response, because we'll have invalidated them by modifying and retransmitting the result -->
 	<xsl:template match="c:header[lower-case(@name)=('content-length', 'content-range', 'trailer', 'transfer-encoding')]"/>
 	
-	<!--TODO cookie management-->
-	<!-- Proxy user may have specified their Trove API key using a "key" URI parameter, which we should return as a set-cookie header -->
-	
 </xsl:stylesheet>
