@@ -28,9 +28,7 @@
 	<p:output port="result" primary="true" sequence="true"/>
 	
 	<p:import href="xproc-z-library.xpl"/>
-	
-	<!--<p:variable name="request-uri" select="/c:request/@href"/>-->
-	
+
 	<p:documentation>
 		Parses an HTTP request (<c:request/> element) received by the proxy.
 		The result document is the same <c:request/> with two additional child <c:param-set/> elements,
@@ -105,7 +103,10 @@
 			<p:with-option name="href" select="concat('../xslt/metadata-formats/', $metadata-format, '.xsl')"/>
 		</p:load>
 		<p:xslt name="transformation">
-			<p:input port="parameters"><p:empty/></p:input>
+			<p:with-param 
+				name="trove-proxy-version" 
+				xmlns:init-parameters="tag:conaltuohy.com,2015:webapp-init-parameters" 
+				select="p:system-property('init-parameters:proxy.version')"/> 
 			<p:input port="source">
 				<p:pipe step="generate-citation" port="source"/>
 			</p:input>
@@ -162,71 +163,82 @@
 		<!--
 		-->
 		<z:dump href="/tmp/trove-http-request.xml"/>
-		
+
 		<p:documentation>Actually issue the request to the Trove API and receive a response</p:documentation>
 		<p:http-request name="issue-request-to-trove-api"/>
 		
 		<!--
 		-->
 		<z:dump href="/tmp/trove-http-response.xml"/>
+		<p:choose>
+			<p:when test="/c:response/@status = '200'">
+				<!-- Trove query returned successfully -->
 		
-		<p:documentation>Fix corrigible errors in the response received from Trove</p:documentation>
-		<p:xslt name="fix-trove-response">
-			<p:input port="parameters"><p:empty/></p:input>
-			<p:input port="stylesheet">
-				<p:document href="../xslt/fix-trove-response.xsl"/>
-			</p:input>
-		</p:xslt>
-	
-		<p:documentation>
-			Rewrite Trove API URIs in the response to be proxy URIs.
-		</p:documentation>
-		<p:xslt name="rewrite-trove-uris-as-proxy-uris">
-			<p:with-param name="request-uri" select="$request-uri"/>
-			<p:with-param name="proxy-base-uri" select="$proxy-base-uri"/>
-			<p:with-param name="upstream-base-uri" select="$upstream-base-uri"/>
-			<p:with-param name="key" select="$key"/>
-			<p:input port="stylesheet">
-				<p:document href="../xslt/rewrite-trove-uris-as-proxy-uris.xsl"/>
-			</p:input>
-		</p:xslt>
-		
-		<p:documentation>Now process just the body of the Trove API response</p:documentation>
-		<p:viewport match="/c:response/c:body/*" name="trove-response-body">
-	
-			<p:documentation>Include additional data for people listed in the response</p:documentation>
-			<z:enhance-people-data>
-				<p:with-option name="include-people-australia" select="$proxy-include-people-australia"/>
-			</z:enhance-people-data>
+				<p:documentation>Fix corrigible errors in the response received from Trove</p:documentation>
+				<p:xslt name="fix-trove-response">
+					<p:input port="parameters"><p:empty/></p:input>
+					<p:input port="stylesheet">
+						<p:document href="../xslt/fix-trove-response.xsl"/>
+					</p:input>
+				</p:xslt>
 			
-			<p:documentation>Convert the Trove XML response into the appropriate format</p:documentation>
-			<z:apply-crosswalk>
-				<p:with-option name="proxy-format" select="$proxy-format"/>
-				<p:with-option name="request-uri" select="$request-uri"/>
-			</z:apply-crosswalk>
-		</p:viewport>
-		
-		<p:documentation>
-			Convert the output of the crosswalk step into the appropriate serialization format.
-			A crosswalk can return JSON to the client by returning an XML document whose
-			root element belongs to the XML vocabulary defined for the XPath 3.1 functions 
-			json-to-xml and xml-to-json.
-			A crosswalk can return csv to the client by returning a document whose root element
-			is <table xmlns="http://www.w3.org/1999/xhtml"/>. 
-		</p:documentation>
-		<z:serialize>
-			<p:with-option name="proxy-format" select="$proxy-format"/>
-		</z:serialize>
-		
-		<p:documentation>Transform the HTTP layer of the response</p:documentation>
-		<p:xslt name="make-proxy-http-response">
-			<p:with-param name="proxy-base-uri" select="$proxy-base-uri"/>
-			<p:with-param name="upstream-base-uri" select="$upstream-base-uri"/>
-			<p:with-param name="content-type" select="$content-type"/>
-			<p:input port="stylesheet">
-				<p:document href="../xslt/make-proxy-http-response.xsl"/>
-			</p:input>
-		</p:xslt>
+				<p:documentation>
+					Rewrite Trove API URIs in the response to be proxy URIs.
+				</p:documentation>
+				<p:xslt name="rewrite-trove-uris-as-proxy-uris">
+					<p:with-param name="request-uri" select="$request-uri"/>
+					<p:with-param name="proxy-base-uri" select="$proxy-base-uri"/>
+					<p:with-param name="upstream-base-uri" select="$upstream-base-uri"/>
+					<p:with-param name="key" select="$key"/>
+					<p:input port="stylesheet">
+						<p:document href="../xslt/rewrite-trove-uris-as-proxy-uris.xsl"/>
+					</p:input>
+				</p:xslt>
+				
+				<p:documentation>Now process just the body of the Trove API response</p:documentation>
+				<p:viewport match="/c:response/c:body/*" name="trove-response-body">
+			
+					<p:documentation>Include additional data for people listed in the response</p:documentation>
+					<z:enhance-people-data>
+						<p:with-option name="include-people-australia" select="$proxy-include-people-australia"/>
+					</z:enhance-people-data>
+					
+					<p:documentation>Convert the Trove XML response into the appropriate format</p:documentation>
+					<z:apply-crosswalk>
+						<p:with-option name="proxy-format" select="$proxy-format"/>
+						<p:with-option name="request-uri" select="$request-uri"/>
+					</z:apply-crosswalk>
+				</p:viewport>
+				
+				<p:documentation>
+					Convert the output of the crosswalk step into the appropriate serialization format.
+					A crosswalk can return JSON to the client by returning an XML document whose
+					root element belongs to the XML vocabulary defined for the XPath 3.1 functions 
+					json-to-xml and xml-to-json.
+					A crosswalk can return csv to the client by returning a document whose root element
+					is <table xmlns="http://www.w3.org/1999/xhtml"/>. 
+				</p:documentation>
+				<z:serialize>
+					<p:with-option name="proxy-format" select="$proxy-format"/>
+				</z:serialize>
+				
+				<p:documentation>Transform the HTTP layer of the response</p:documentation>
+				<p:xslt name="make-proxy-http-response">
+					<p:with-param name="proxy-base-uri" select="$proxy-base-uri"/>
+					<p:with-param name="upstream-base-uri" select="$upstream-base-uri"/>
+					<p:with-param name="content-type" select="$content-type"/>
+					<p:input port="stylesheet">
+						<p:document href="../xslt/make-proxy-http-response.xsl"/>
+					</p:input>
+				</p:xslt>
+			</p:when>
+			<p:otherwise>
+				<!-- Trove query failed -->
+				<!-- TODO upgrade Trove's response to something more human-readable -->
+				<cx:message message="Trove query failed"/>
+				<p:delete name="remove-content-length-header" match="/c:response/c:header[lower-case(@name) = 'content-length']"/>
+			</p:otherwise>
+		</p:choose>
 	</p:declare-step>
 	
 	<p:declare-step name="serialize" type="z:serialize">
@@ -337,6 +349,7 @@
 					<p:catch>
 						<!-- if an HTTP timeout occurs calling the SRU service, simply return
 						the unenhanced people data -->
+						<cx:message message="HTTP error calling SRU service"/>
 						<p:identity>
 							<p:input port="source">
 								<p:pipe step="enhance-people-data" port="source"/>

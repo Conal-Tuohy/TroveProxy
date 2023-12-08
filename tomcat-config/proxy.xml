@@ -1,3 +1,4 @@
 <Context docBase='/xproc-z.war'>
 	<Parameter name="xproc-z.main" value="/src/xproc/trove-proxy.xpl" override="false"/>
+	<Parameter name="proxy.version" value="1.0" override="false"/>
 </Context>
