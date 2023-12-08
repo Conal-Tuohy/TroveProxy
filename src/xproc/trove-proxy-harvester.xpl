@@ -157,7 +157,6 @@
 			<p:input port="parameters"><p:empty/></p:input>
 			<p:input port="stylesheet"><p:document href="../xslt/harvester/view-harvest.xsl"/></p:input>
 		</p:xslt>
-		<z:make-http-response content-type="application/xhtml+xml"/>
 	</p:declare-step>
 	
 	<p:declare-step name="list-harvests" type="t:list-harvests">
@@ -199,31 +198,69 @@
 			<p:with-option name="value" select="/c:request/c:body[@content-type='application/x-www-form-urlencoded']"/>
 		</p:www-form-urldecode>
 		<p:group>
-			<p:variable name="harvest-name" select="/c:param-set/c:param[@name='name']/@value"/>
 			<p:variable name="harvest-url" select="/c:param-set/c:param[@name='url']/@value"/>
+			<p:variable name="harvest-name" select="
+				substring-after(
+					(
+						substring-after($harvest-url, '?') => tokenize('&amp;'),
+						'proxy-metadata-name=unnamed%20harvest'
+					)[starts-with(., 'proxy-metadata-name=')][1],
+					'='
+				) => replace('\+', '%20')
+			"/>
 			<p:variable name="harvests-directory" select="p:system-property('init-parameters:harvester.harvest-directory')"/>
-			<p:variable name="harvest-directory" select="concat($harvests-directory, encode-for-uri($harvest-name))"/>
+			<p:variable name="harvest-directory" select="concat($harvests-directory, $harvest-name)"/>
 			<!--<p:try>-->
 				<p:group>
 					<file:mkdir>
 						<p:with-option name="href" select="$harvest-directory"/>
 					</file:mkdir>
-					<p:template name="create-harvest-initial-state">
-						<p:with-param name="harvest-url" select="$harvest-url"/>
-						<p:input port="source"><p:empty/></p:input>
-						<p:input port="template">
-							<p:inline exclude-inline-prefixes="#all">
-								<harvest
-									status="starting"
-									started="{current-dateTime()}" 
-									last-updated="{current-dateTime()}" 
-									requests="0"
-								>
-									<pending url="{$harvest-url}"/>
-								</harvest>
-							</p:inline>
-						</p:input>
-					</p:template>
+					<!-- we are starting or restarting a harvest, so any prior error can be forgiven -->
+					<file:delete fail-on-error="false">
+						<p:with-option name="href" select="concat($harvest-directory, '/error.xml')"/>
+					</file:delete>
+					<p:try>
+						<p:group>
+							<!-- Attempt to load existing status.xml file for this dataset -->
+							<!-- If it exists, the dataset will be appended to -->
+							<p:load>
+								<p:with-option name="href" select="concat($harvest-directory, '/status.xml')"/>
+							</p:load>
+							<p:add-attribute match="/harvest" attribute-name="status" attribute-value="restarting"/>
+							<p:add-attribute match="/harvest" attribute-name="last-updated">
+								<p:with-option name="attribute-value" select="current-dateTime()"/>
+							</p:add-attribute>
+							<p:insert match="harvest" position="last-child">
+								<p:input port="insertion">
+									<p:inline>
+										<pending/>
+									</p:inline>
+								</p:input>
+							</p:insert>
+							<p:add-attribute match="/harvest/pending[not(@url)][last()]" attribute-name="url">
+								<p:with-option name="attribute-value" select="$harvest-url"/>
+							</p:add-attribute>
+						</p:group>
+						<p:catch>
+							<!-- create an initial status.xml since it doesn't already exist -->
+							<p:template name="create-harvest-initial-state">
+								<p:with-param name="harvest-url" select="$harvest-url"/>
+								<p:input port="source"><p:empty/></p:input>
+								<p:input port="template">
+									<p:inline exclude-inline-prefixes="#all">
+										<harvest
+											status="starting"
+											started="{current-dateTime()}" 
+											last-updated="{current-dateTime()}" 
+											requests="0"
+										>
+											<pending url="{$harvest-url}"/>
+										</harvest>
+									</p:inline>
+								</p:input>
+							</p:template>
+						</p:catch>
+					</p:try>
 					<p:store indent="true">
 						<p:with-option name="href" select="concat($harvest-directory, '/status.xml')"/>
 					</p:store>
@@ -233,7 +270,7 @@
 						<p:input port="source"><p:empty/></p:input>
 						<p:input port="template">
 							<p:inline exclude-inline-prefixes="#all">
-								<c:request href="http://localhost:8080/harvester/harvest/{encode-for-uri($name)}/run" method="POST"/>
+								<c:request href="http://localhost:8080/harvester/harvest/{$name}/run" method="POST"/>
 							</p:inline>
 						</p:input>
 					</p:template>
@@ -243,7 +280,8 @@
 						<p:input port="template">
 							<p:inline>
 								<c:response status="302">
-									<c:header name="Location" value="{encode-for-uri($harvest-name)}/"/>
+									<c:header name="Location" value="{$harvest-name}/"/>
+									<c:header name="Access-Control-Allow-Origin" value="*"/>
 								</c:response>
 							</p:inline>
 						</p:input>
@@ -329,203 +367,261 @@
 					</p:input>
 				</p:template>
 				<p:http-request name="data"/>
-				<p:group name="save">
-					<p:variable name="content-type" select="/c:response/c:header[lower-case(@name) = 'content-type']/@value"/>
-					<p:variable name="extension" select="
-						if ($content-type = 'text/csv') then 
-							'.csv' 
-						else 
-							'.xml'
-					"/>
-					<p:variable name="filename" select="
-						concat(
-							format-integer($requests, '296635227'), (: Trove contains ~300M items :)
-							$extension
-						)
-					"/>
-					<p:choose>
-						<p:when test="$extension = '.xml'">
-							<p:store name="save-xml" method="xml">
-								<p:input port="source" select="/c:response/c:body/*">
-									<p:pipe step="data" port="result"/>
-								</p:input>
-								<p:with-option name="href" select="concat($harvest-directory, '/', $filename)"/>
-							</p:store>
-						</p:when>
-						<p:otherwise>
-							<p:store name="save-plain-text" method="text">
-								<p:input port="source" select="/c:response/c:body">
-									<p:pipe step="data" port="result"/>
-								</p:input>
-								<p:with-option name="href" select="concat($harvest-directory, '/', $filename)"/>
-							</p:store>
-						</p:otherwise>
-					</p:choose>
-					<!-- update the status.xml file 
-						the incremented request number,
-						remove the downloaded URL,
-						add any new 'next' or 'section' links from the downloaded resource 
-					-->
-					<p:for-each name="new-pending-links">
-						<p:iteration-source select="
-							/c:response/c:header
-								[lower-case(@name)='link']
-								[@value => lower-case() => substring-after(' rel=') = ('next', 'section')]
-						">
-							<p:pipe step="data" port="result"/>
-						</p:iteration-source>
-						<p:output port="result"/>
-						<p:template name="pending-url">
-							<p:with-param name="url" select="substring-before(substring-after(/c:header/@value, '&lt;'), '&gt;')"/>
-							<p:input port="template">
-								<p:inline exclude-inline-prefixes="#all">
-									<pending url="{$url}"/>
+				<p:choose>
+					<p:when test="/c:response/@status = '200'">
+						<t:process-trove-response name="ingest-harvested-resource">
+							<p:with-option name="requests" select="$requests"/>
+							<p:with-option name="harvest-directory" select="$harvest-directory"/>
+							<p:with-option name="harvest-name" select="$harvest-directory"/>
+						</t:process-trove-response>
+						<p:identity>
+							<p:input port="source">
+								<p:pipe step="ingest-harvested-resource" port="result"/>
+								<!-- repeat the current request -->
+								<p:pipe step="run-harvest" port="source"/>
+							</p:input>
+						</p:identity>
+					</p:when>
+					<p:otherwise>
+						<!-- Failed to retrieve the data -->
+						<p:store>
+							<p:with-option name="href" select="concat($harvest-directory, '/error.xml')"/>
+						</p:store>
+						<p:load>
+							<p:with-option name="href" select="concat($harvest-directory, '/status.xml')"/>
+						</p:load>
+						<p:add-attribute match="/harvest" attribute-name="status" attribute-value="aborted"/>
+						<p:store>
+							<p:with-option name="href" select="concat($harvest-directory, '/status.xml')"/>
+						</p:store>
+						<p:identity>
+							<p:input port="source">
+								<p:inline>
+									<c:response status="500">
+										<c:body content-type="text/plain">Failed to retrieve data</c:body>
+									</c:response>
 								</p:inline>
 							</p:input>
-						</p:template>
-					</p:for-each>
-					<p:sink/>
-					<!--
-					<p:load name="harvest-status-before-trove-query">
-						<p:with-option name="href" select="concat($harvest-directory, '/status.xml')"/>
-					</p:load>
-					-->
-					<p:load name="harvest-status-after-trove-query">
-						<p:with-option name="href" select="concat($harvest-directory, '/status.xml')"/>
-					</p:load>
-					<p:add-attribute match="/harvest" attribute-name="requests">
-						<p:with-option name="attribute-value" select="$requests"/>
-					</p:add-attribute>
-					<p:delete match="/harvest/pending[1]"/>
-					<p:insert match="/harvest" position="last-child">
-						<p:input port="insertion">
-							<p:pipe step="new-pending-links" port="result"/>
-						</p:input>
-					</p:insert>
-					<p:choose>
-						<p:when test="not(/harvest/pending)">
-							<p:add-attribute match="/harvest" attribute-name="status" attribute-value="completed"/>
-							<cx:message>
-								<p:with-option name="message" select="concat('harvester completed harvest &quot;', $harvest-name, '&quot;')"/>
-							</cx:message>
-						</p:when>
-						<p:otherwise>
-							<p:add-attribute match="/harvest" attribute-name="status" attribute-value="running"/>
-						</p:otherwise>
-					</p:choose>
-					<p:add-attribute match="/harvest" attribute-name="last-updated">
-						<p:with-option name="attribute-value" select="current-dateTime()"/>
-					</p:add-attribute>
-					<p:identity name="updated-status"/>
-					<p:store name="save-updated-status" indent="true">
-						<p:with-option name="href" select="concat($harvest-directory, '/status.xml')"/>
-					</p:store>
-					<!-- Update RO-Crate metadata -->
-					<!-- load already-harvested RO-Crate object -->
-					<p:try>
-						<p:group>
-							<p:template name="prepare-to-load-local-ro-crate">
-								<p:with-param name="href" select="concat($harvest-directory, '/ro-crate-metadata.json')"/>
-								<p:input port="source"><p:empty/></p:input>
-								<p:input port="template">
-									<p:inline>
-										<c:request href="{$href}" method="GET" override-content-type="text/plain"/>
-									</p:inline>
-								</p:input>
-							</p:template>
-							<p:http-request/>
-							<!-- returns a c:body containing the JSON or throws not found error -->
-						</p:group>
-						<p:catch name="load-local-metadata-failed">
-							<p:try>
-								<p:group>
-									<p:template name="prepare-to-load-ro-crate-from-proxy">
-										<p:with-param name="href" select="
-											substring-before(
-												substring-after(
-													/c:response/c:header
-														[lower-case(@name)='link']
-														[@value => lower-case() => substring-after(' rel=') = 'describedby'][1]/@value,
-													'&lt;'
-												), 
-												'&gt;'
-											)
-										">
-											<p:pipe step="data" port="result"/>
-										</p:with-param>
-										<p:input port="source"><p:empty/></p:input>
-										<p:input port="template">
-											<p:inline>
-												<c:request href="{$href}" method="GET" override-content-type="text/plain"/>
-											</p:inline>
-										</p:input>
-									</p:template>
-									<p:http-request/>
-								</p:group>
-								<p:catch name="http-request-for-metadata-failed">
-									<p:identity>
-										<p:input port="source">
-											<p:pipe step="http-request-for-metadata-failed" port="error"/>
-										</p:input>
-									</p:identity>
-									<cx:message>
-										<p:with-option name="message" select="concat('Downloading ro-crate failed: ', serialize(/))"/>
-									</cx:message>
-								</p:catch>
-							</p:try>
-						</p:catch>
-					</p:try>
-					<!-- update it -->
-					<p:xslt name="update-ro-crate-metadata">
-						<p:with-param name="filename" select="$filename"/>
-						<p:with-param name="content-type" select="$content-type"/>
-						<p:input port="stylesheet">
-							<p:document href="../xslt/harvester/update-ro-crate-metadata.xsl"/>
-						</p:input>
-					</p:xslt>
-					<!-- save the updated RO-Crate file -->
-					<p:store method="text">
-						<p:with-option name="href" select="concat($harvest-directory, '/ro-crate-metadata.json')"/>
-					</p:store>
-
-					<cx:message cx:depends-on="save-updated-status" message="run-harvest saved updated status">
-						<p:input port="source"><p:empty/></p:input>
-					</cx:message>
-					<p:identity>
-						<p:input port="source">
-							<p:pipe step="updated-status" port="result"/>
-						</p:input>
-					</p:identity>
-					<p:choose>
-						<p:when test="/harvest/@status='completed'">
-							<!-- respond with a "finished" message -->
-							<p:identity name="harvest-complete">
-								<p:input port="source">
-									<p:inline>
-										<c:response status="200">
-											<c:body content-type="text/plain">harvest complete</c:body>
-										</c:response>
-									</p:inline>
-								</p:input>
-							</p:identity>
-						</p:when>
-						<p:otherwise>
-							<p:identity name="harvest-continuing">
-								<p:input port="source">
-									<p:inline>
-										<c:response status="202"><!-- accepted for ongoing processing -->
-											<c:body content-type="text/plain">harvest continuing</c:body>
-										</c:response>
-									</p:inline>
-									<!-- repeat the current request -->
-									<p:pipe step="run-harvest" port="source"/>
-								</p:input>
-							</p:identity>
-						</p:otherwise>
-					</p:choose>
-				</p:group>
+						</p:identity>
+					</p:otherwise>
+				</p:choose>
 			</p:otherwise>
 		</p:choose>
 	</p:declare-step>
-		
+	
+	<p:declare-step name="process-trove-response" type="t:process-trove-response">
+		<p:input port="source"/>
+		<p:output port="result" sequence="true"/>
+		<p:option name="requests" required="true"/>
+		<p:option name="harvest-directory" required="true"/>
+		<p:option name="harvest-name" required="true"/>
+		<p:variable name="query-response-status" select="/c:response/@status"/>
+		<p:variable name="content-type" select="/c:response/c:header[lower-case(@name) = 'content-type']/@value"/>
+		<p:variable name="extension" select="
+			if ($content-type = 'text/csv') then 
+				'.csv' 
+			else 
+				'.xml'
+		"/>
+		<p:variable name="filename" select="
+			concat(
+				format-integer($requests, '296635227'), (: Trove contains ~300M items :)
+				$extension
+			)
+		"/>
+		<p:choose>
+			<p:when test="$extension = '.xml'">
+				<p:store name="save-xml" method="xml">
+					<p:input port="source" select="/c:response/c:body/*">
+						<p:pipe step="process-trove-response" port="source"/>
+					</p:input>
+					<p:with-option name="href" select="concat($harvest-directory, '/', $filename)"/>
+				</p:store>
+			</p:when>
+			<p:otherwise>
+				<p:store name="save-plain-text" method="text">
+					<p:input port="source" select="/c:response/c:body">
+						<p:pipe step="process-trove-response" port="source"/>
+					</p:input>
+					<p:with-option name="href" select="concat($harvest-directory, '/', $filename)"/>
+				</p:store>
+			</p:otherwise>
+		</p:choose>
+		<!-- update the status.xml file 
+			the incremented request number,
+			remove the downloaded URL,
+			add any new 'next' or 'section' links from the downloaded resource 
+		-->
+		<p:for-each name="new-pending-links">
+			<p:iteration-source select="
+				/c:response/c:header
+					[lower-case(@name)='link']
+					[@value => lower-case() => substring-after(' rel=') = ('next', 'section')]
+			">
+				<p:pipe step="process-trove-response" port="source"/>
+			</p:iteration-source>
+			<p:output port="result"/>
+			<p:template name="pending-url">
+				<p:with-param name="url" select="substring-before(substring-after(/c:header/@value, '&lt;'), '&gt;')"/>
+				<p:input port="template">
+					<p:inline exclude-inline-prefixes="#all">
+						<pending url="{$url}"/>
+					</p:inline>
+				</p:input>
+			</p:template>
+		</p:for-each>
+		<p:sink/>
+		<!--
+		<p:load name="harvest-status-before-trove-query">
+			<p:with-option name="href" select="concat($harvest-directory, '/status.xml')"/>
+		</p:load>
+		-->
+		<p:load name="harvest-status-after-trove-query">
+			<p:with-option name="href" select="concat($harvest-directory, '/status.xml')"/>
+		</p:load>
+		<p:add-attribute match="/harvest" attribute-name="requests">
+			<p:with-option name="attribute-value" select="$requests"/>
+		</p:add-attribute>
+		<p:delete match="/harvest/pending[1]"/>
+		<p:insert match="/harvest" position="last-child">
+			<p:input port="insertion">
+				<p:pipe step="new-pending-links" port="result"/>
+			</p:input>
+		</p:insert>
+		<p:choose>
+			<p:when test="$query-response-status != '200'">
+				<p:add-attribute match="/harvest" attribute-name="status" attribute-value="aborted"/>
+				<cx:message>
+					<p:with-option name="message" select="concat('harvester aborted harvest &quot;', $harvest-name, '&quot;')"/>
+				</cx:message>
+			</p:when>
+			<p:when test="not(/harvest/pending)">
+				<p:add-attribute match="/harvest" attribute-name="status" attribute-value="completed"/>
+				<cx:message>
+					<p:with-option name="message" select="concat('harvester completed harvest &quot;', $harvest-name, '&quot;')"/>
+				</cx:message>
+			</p:when>
+			<p:otherwise>
+				<p:add-attribute match="/harvest" attribute-name="status" attribute-value="running"/>
+			</p:otherwise>
+		</p:choose>
+		<p:add-attribute match="/harvest" attribute-name="last-updated">
+			<p:with-option name="attribute-value" select="current-dateTime()"/>
+		</p:add-attribute>
+		<p:identity name="updated-status"/>
+		<p:store name="save-updated-status" indent="true">
+			<p:with-option name="href" select="concat($harvest-directory, '/status.xml')"/>
+		</p:store>
+		<!-- Update RO-Crate metadata -->
+		<!-- load already-harvested RO-Crate object -->
+		<p:try>
+			<p:group>
+				<p:template name="prepare-to-load-local-ro-crate">
+					<p:with-param name="href" select="concat($harvest-directory, '/ro-crate-metadata.json')"/>
+					<p:input port="source"><p:empty/></p:input>
+					<p:input port="template">
+						<p:inline>
+							<c:request href="{$href}" method="GET" override-content-type="text/plain"/>
+						</p:inline>
+					</p:input>
+				</p:template>
+				<p:http-request/>
+				<!-- returns a c:body containing the JSON or throws not found error -->
+			</p:group>
+			<p:catch name="load-local-metadata-failed">
+				<p:try>
+					<p:group>
+						<p:template name="prepare-to-load-ro-crate-from-proxy">
+							<p:with-param name="href" select="
+								substring-before(
+									substring-after(
+										/c:response/c:header
+											[lower-case(@name)='link']
+											[@value => lower-case() => substring-after(' rel=') = 'describedby'][1]/@value,
+										'&lt;'
+									), 
+									'&gt;'
+								)
+							">
+								<p:pipe step="process-trove-response" port="source"/>
+							</p:with-param>
+							<p:input port="source"><p:empty/></p:input>
+							<p:input port="template">
+								<p:inline>
+									<c:request href="{$href}" method="GET" override-content-type="text/plain"/>
+								</p:inline>
+							</p:input>
+						</p:template>
+						<p:http-request/>
+					</p:group>
+					<p:catch name="http-request-for-metadata-failed">
+						<p:identity>
+							<p:input port="source">
+								<p:pipe step="http-request-for-metadata-failed" port="error"/>
+							</p:input>
+						</p:identity>
+						<cx:message>
+							<p:with-option name="message" select="concat('Downloading ro-crate failed: ', serialize(/))"/>
+						</cx:message>
+					</p:catch>
+				</p:try>
+			</p:catch>
+		</p:try>
+		<!-- update it -->
+		<p:xslt name="update-ro-crate-metadata">
+			<p:with-param name="filename" select="$filename"/>
+			<p:with-param name="content-type" select="$content-type"/>
+			<p:input port="stylesheet">
+				<p:document href="../xslt/harvester/update-ro-crate-metadata.xsl"/>
+			</p:input>
+		</p:xslt>
+		<!-- save the updated RO-Crate file -->
+		<p:store method="text">
+			<p:with-option name="href" select="concat($harvest-directory, '/ro-crate-metadata.json')"/>
+		</p:store>
+
+		<p:identity>
+			<p:input port="source">
+				<p:pipe step="updated-status" port="result"/>
+			</p:input>
+		</p:identity>
+		<p:choose>
+			<p:when test="/harvest/@status='completed'">
+				<!-- respond with a "finished" message -->
+				<p:identity name="harvest-complete">
+					<p:input port="source">
+						<p:inline>
+							<c:response status="200">
+								<c:body content-type="text/plain">harvest complete</c:body>
+							</c:response>
+						</p:inline>
+					</p:input>
+				</p:identity>
+			</p:when>
+			<p:when test="/harvest/@status='aborted'">
+				<!-- respond with a "aborted" message -->
+				<p:identity name="harvest-complete">
+					<p:input port="source">
+						<p:inline>
+							<c:response status="500">
+								<c:body content-type="text/plain">harvest aborted</c:body>
+							</c:response>
+						</p:inline>
+					</p:input>
+				</p:identity>
+			</p:when>
+			<p:otherwise>
+				<p:identity name="harvest-continuing">
+					<p:input port="source">
+						<p:inline>
+							<c:response status="202"><!-- accepted for ongoing processing -->
+								<c:body content-type="text/plain">harvest continuing</c:body>
+							</c:response>
+						</p:inline>
+					</p:input>
+				</p:identity>
+			</p:otherwise>
+		</p:choose>
+	</p:declare-step>
+	
 </p:declare-step>
