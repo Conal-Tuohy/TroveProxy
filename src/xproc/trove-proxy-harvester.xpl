@@ -513,72 +513,73 @@
 			<p:with-option name="href" select="concat($harvest-directory, '/status.xml')"/>
 		</p:store>
 		<!-- Update RO-Crate metadata -->
+		<!-- 
+			Retrieve an RO-Crate metadata description of the just-harvested resource.
+			Attempt to load a pre-existing RO-Crate metadata resource (or return <json:null/>)
+			Construct a new JSON map containing both RO-Crate maps.
+		-->
 		<!-- load already-harvested RO-Crate object -->
-		<p:try>
-			<p:group>
-				<p:template name="prepare-to-load-local-ro-crate">
-					<p:with-param name="href" select="concat($harvest-directory, '/ro-crate-metadata.json')"/>
-					<p:input port="source"><p:empty/></p:input>
-					<p:input port="template">
-						<p:inline>
-							<c:request href="{$href}" method="GET" override-content-type="text/plain"/>
-						</p:inline>
-					</p:input>
-				</p:template>
-				<p:http-request/>
-				<!-- returns a c:body containing the JSON or throws not found error -->
-			</p:group>
-			<p:catch name="load-local-metadata-failed">
-				<p:try>
-					<p:group>
-						<p:template name="prepare-to-load-ro-crate-from-proxy">
-							<p:with-param name="href" select="
-								substring-before(
-									substring-after(
-										/c:response/c:header
-											[lower-case(@name)='link']
-											[@value => lower-case() => substring-after(' rel=') = 'describedby'][1]/@value,
-										'&lt;'
-									), 
-									'&gt;'
-								)
-							">
-								<p:pipe step="process-trove-response" port="source"/>
-							</p:with-param>
-							<p:input port="source"><p:empty/></p:input>
-							<p:input port="template">
-								<p:inline>
-									<c:request href="{$href}" method="GET" override-content-type="text/plain"/>
-								</p:inline>
-							</p:input>
-						</p:template>
-						<p:http-request/>
-					</p:group>
-					<p:catch name="http-request-for-metadata-failed">
-						<p:identity>
-							<p:input port="source">
-								<p:pipe step="http-request-for-metadata-failed" port="error"/>
-							</p:input>
-						</p:identity>
-						<cx:message>
-							<p:with-option name="message" select="concat('Downloading ro-crate failed: ', serialize(/))"/>
-						</cx:message>
-					</p:catch>
-				</p:try>
-			</p:catch>
-		</p:try>
+		<t:load-ro-crate-metadata>
+			<p:with-option name="href" select="
+				concat(
+					$harvest-directory, 
+					'/ro-crate-metadata.json'
+				)
+			"/>
+		</t:load-ro-crate-metadata>
+		<p:add-attribute name="local-ro-crate-metadata" match="/*" attribute-name="key" attribute-value="local"/> 
+		<!-- download new RO-Crate object -->
+		<t:load-ro-crate-metadata>
+			<p:with-option name="href" select="
+				substring-before(
+					substring-after(
+						/c:response/c:header
+							[lower-case(@name)='link']
+							[@value => lower-case() => substring-after(' rel=') = 'describedby'][1]/@value,
+						'&lt;'
+					), 
+					'&gt;'
+				)
+			">
+				<p:pipe step="process-trove-response" port="source"/>
+			</p:with-option>
+		</t:load-ro-crate-metadata>
+		<p:add-attribute name="downloaded-ro-crate-metadata" match="/*" attribute-name="key" attribute-value="downloaded"/> 
+		<!-- add the two crates as members of a single map for subsequent merging -->
+		<p:wrap-sequence name="ro-crate-metadata-old-and-new" wrapper-namespace="http://www.w3.org/2005/xpath-functions" wrapper="map">
+			<p:input port="source">
+				<p:pipe step="local-ro-crate-metadata" port="result"/>
+				<p:pipe step="downloaded-ro-crate-metadata" port="result"/>
+			</p:input>
+		</p:wrap-sequence>
+		<z:dump href="/tmp/merged-ro-crate.xml"/>
+		
 		<!-- update it -->
 		<p:xslt name="update-ro-crate-metadata">
 			<p:with-param name="filename" select="$filename"/>
+			<p:with-param name="request-number" select="$requests"/>
 			<p:with-param name="content-type" select="$content-type"/>
+			<p:with-param 
+				name="trove-harvester-version" 
+				xmlns:init-parameters="tag:conaltuohy.com,2015:webapp-init-parameters" 
+				select="p:system-property('init-parameters:harvester.version')"/> 
 			<p:input port="stylesheet">
 				<p:document href="../xslt/harvester/update-ro-crate-metadata.xsl"/>
 			</p:input>
 		</p:xslt>
+		<z:dump href="/tmp/merged-and-updated-ro-crate.xml"/>
+<!--
+<p:sink/>
+<p:identity>
+	<p:input port="source">
+		<p:inline><string xmlns="">test of save-ro-crate-metadata</string></p:inline>
+	</p:input>
+</p:identity>
+-->
 		<!-- save the updated RO-Crate file -->
-		<p:store method="text">
+		<t:save-ro-crate-metadata>
 			<p:with-option name="href" select="concat($harvest-directory, '/ro-crate-metadata.json')"/>
-		</p:store>
+		</t:save-ro-crate-metadata>
 
 		<p:identity>
 			<p:input port="source">
@@ -622,6 +623,78 @@
 				</p:identity>
 			</p:otherwise>
 		</p:choose>
+	</p:declare-step>
+	
+	<!-- writes JSON XML to specified href as JSON-LD -->
+	<p:declare-step name="save-ro-crate-metadata" type="t:save-ro-crate-metadata">
+		<p:option name="href" required="true"/>
+		<p:input port="source"/>
+		<p:template name="convert-to-json">
+			<p:input port="parameters"><p:empty/></p:input>
+			<p:input port="template">
+				<p:inline>
+					<c:body content-type="text/plain" xmlns:map="http://www.w3.org/2005/xpath-functions/map">{
+						xml-to-json(
+							/, 
+							map:entry('indent', true())
+						)
+					}</c:body>
+				</p:inline>
+			</p:input>
+		</p:template>
+		<p:store method="text">
+			<p:with-option name="href" select="$href"/>
+		</p:store>
+	</p:declare-step>
+		
+	<!-- reads JSON-LD from specified href, convert to JSON-XML -->
+	<p:declare-step name="load-ro-crate-metadata" type="t:load-ro-crate-metadata">
+		<p:option name="href" required="true"/>
+		<p:output port="result"/>
+		<p:try name="ro-crate">
+			<p:group>
+				<p:template name="prepare-to-load-ro-crate">
+					<p:with-param name="href" select="$href"/>
+					<p:input port="source"><p:empty/></p:input>
+					<p:input port="template">
+						<p:inline>
+							<c:request href="{$href}" method="GET" override-content-type="text/plain"/>
+						</p:inline>
+					</p:input>
+				</p:template>
+				<cx:message>
+					<p:with-option name="message" select="concat('harvester: Reading RO-Crate metadata from ''', /c:request/@href, ''' ...')"/>
+				</cx:message>
+				<!-- returns a c:body containing the JSON or throws not found error -->
+				<p:http-request name="json-in-body-element"/>
+				<!-- convert JSON body to JSON XML for ease of subsequent processing -->
+				<!--
+				<p:template>
+					<p:input port="parameters"><p:empty/></p:input>
+					<p:input port="template">
+						<p:inline>{json-to-xml(.)}</p:inline>
+					</p:input>
+				</p:template>
+				-->
+				<!--
+				<p:identity>
+					<p:input port="source" select="json-to-xml(/)">
+						<p:pipe step="json-in-body-element" port="result"/>
+					</p:input>
+				</p:identity>
+				-->
+				<p:filter select="json-to-xml(/)"/>
+			</p:group>
+			<p:catch name="load-metadata-failed">
+				<p:identity name="no-metadata">
+					<p:input port="source">
+						<p:inline>
+							<null xmlns="http://www.w3.org/2005/xpath-functions"/>
+						</p:inline>
+					</p:input>
+				</p:identity>
+			</p:catch>
+		</p:try>
 	</p:declare-step>
 	
 </p:declare-step>
