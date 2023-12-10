@@ -1,0 +1,30 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: TroveProxy
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - given-names: Conal
+    family-names: Tuohy
+    email: conal.tuohy@gmail.com
+    orcid: 'https://orcid.org/0000-0001-6831-3423'
+repository-code: 'https://github.com/Conal-Tuohy/TroveProxy'
+url: 'https://github.com/Conal-Tuohy/TroveProxy'
+abstract: >-
+  A transforming proxy for the National Library of
+  Australia's Trove API. The software exposes Trove's web
+  API while adding certain extra features; in particular it
+  exposes the data in additional data formats, facilitates
+  bulk harvesting, and provides a facility to generate
+  RO-Crate metadata descriptions of harvested datasets.
+keywords:
+  - Trove
+  - Proxy
+  - Text Encoding for Interchange
+  - Comma Separated Values
+  - Atom Syndication Format
+license: Apache-2.0
