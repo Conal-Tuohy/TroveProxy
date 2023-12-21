@@ -16,7 +16,7 @@
 					<xsl:attribute name="next" select="concat(., '#', ancestor::category/@code)"/>
 				</xsl:for-each>
 				<!-- TODO expand to cover all Trove's content, not just newspaper articles -->
-				<xsl:apply-templates select="article|work|version"/>
+				<xsl:apply-templates select="article|work|people"/>
 			</teiCorpus>
 		</xsl:where-populated>
 	</xsl:template>
@@ -57,9 +57,11 @@
 		</TEI>
 	</xsl:template>
 
-	
+	<xsl:template match="work[not(child::version)]"/>
+	<xsl:template match="work[child::version]">
+		<xsl:apply-templates select="version"/>
+	</xsl:template>
 	<xsl:template match="version">
-
 		<TEI n="{@id}">
 			<teiHeader>
 				<fileDesc>
@@ -73,7 +75,7 @@
 						<availability>
 							<p></p>
 						</availability>
-						<ptr target="{identifier}"/>
+						<ptr target="{(identifier[@linktype='fulltext']/value, ancestor-or-self::work/troveUrl)[1]}"/>
 					</publicationStmt>
 
 				</fileDesc>
