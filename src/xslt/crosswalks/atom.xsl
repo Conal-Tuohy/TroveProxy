@@ -16,6 +16,9 @@
 		<feed>
 			<title>{query}</title>
 			<link rel="self" href="{$request-uri}"/>
+			<xsl:for-each select="category/records/@next">
+				<link rel="next" href="{$request-uri}"/>
+			</xsl:for-each>
 			<updated>{current-dateTime()}</updated>
 			<id>{$request-uri}</id>
 			<xsl:apply-templates/>

@@ -9,10 +9,12 @@
 	<xsl:template match="response/query"/>
 	<xsl:template match="response/category/records">
 		<xsl:where-populated>
-			<teiCorpus>
+			<teiCorpus xml:id="{ancestor::category/@code}">
 				<xsl:attribute name="type" select="ancestor::category/@code"/>
 				<!-- the corpus may continue on another page of Trove API results -->
-				<xsl:copy-of select="@next"/>
+				<xsl:for-each select="@next">
+					<xsl:attribute name="next" select="concat(., '#', ancestor::category/@code)"/>
+				</xsl:for-each>
 				<!-- TODO expand to cover all Trove's content, not just newspaper articles -->
 				<xsl:apply-templates select="article|work|version"/>
 			</teiCorpus>
