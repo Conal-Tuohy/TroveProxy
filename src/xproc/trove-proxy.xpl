@@ -299,7 +299,13 @@
 				</p:xslt>
 			</p:when>
 			<p:otherwise>
-				<p:documentation>No transformation requested: return Trove XML</p:documentation>
+				<p:documentation>No transformation requested: return Trove XML with minor tweaks</p:documentation>
+				<p:documentation>
+					Details of the Trove HTTP request was previously inserted into the response, 
+					to allow crosswalks to render it in the metadata portion of their output.
+					We remove it here to avoid exposing the user's API key.
+				</p:documentation>
+				<p:delete name="remove-http-request-metadata" match="/response/c:request"/>
 				<p:identity name="trove-xml"/>
 			</p:otherwise>
 		</p:choose>
