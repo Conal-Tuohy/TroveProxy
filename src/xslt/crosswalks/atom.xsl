@@ -12,9 +12,14 @@
 
 	<xsl:template match="response/query"/>
 
+	<xsl:variable name="request-parameters" select="/response/c:request/c:param-set[@xml:id='parameters']/c:param"/>
+
 	<xsl:template match="response">
 		<feed>
-			<title>{query}</title>
+			<title>{($request-parameters[@name='proxy-metadata-name']/@value[normalize-space()], query)[1]}</title>
+			<xsl:for-each select="$request-parameters[@name='proxy-metadata-description']/@value[normalize-space()][1]">
+				<subtitle>{.}</subtitle>
+			</xsl:for-each>
 			<link rel="self" href="{$request-uri}"/>
 			<xsl:for-each select="category/records/@next">
 				<link rel="next" href="{$request-uri}"/>

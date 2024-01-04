@@ -1,8 +1,46 @@
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="3.0"
+	xmlns:c="http://www.w3.org/ns/xproc-step"
 	xmlns="http://www.tei-c.org/ns/1.0" expand-text="yes">
+	
+	<xsl:variable name="request-parameters" select="/response/c:request/c:param-set[@xml:id='parameters']/c:param"/>
  
+	<!-- the parameters of the query sent to trove don't include the 'proxy-*' parameters -->
+	<xsl:variable name="trove-parameters" select="
+		$request-parameters[not(starts-with(@name, 'proxy-'))][not(@name='key')]
+	"/>
+	
+	<xsl:variable name="trove-resource-uri" select="
+		concat(
+			'https://api.trove.nla.gov.au',
+			substring-after(
+				/response/c:request/c:param-set[@xml:id='uri']/c:param[@name='path']/@value,
+				'/proxy'
+			),
+			'?', 
+			string-join($trove-parameters/concat(@name, '=', encode-for-uri(@value)), '&amp;')
+		)
+	"/>
+	
+	<xsl:variable name="corpus-title" select="($request-parameters[@name='proxy-metadata-name']/@value[normalize-space()], 'Untitled corpus')[1]"/>
+	
 	<xsl:template match="response">
 		<teiCorpus n="{query}">
+			<teiHeader>
+				<fileDesc>
+					<titleStmt>
+						<title>{$corpus-title}</title>
+					</titleStmt>
+					<publicationStmt>
+						<p>Published by converting the results of a Trove API query into TEI XML.</p>
+					</publicationStmt>
+					<sourceDesc>
+						<xsl:for-each select="$request-parameters[@name='proxy-metadata-description']/@value[normalize-space()]">
+							<p>{.}</p>
+						</xsl:for-each>
+						<p>Derived from the results of the Trove API query <ref target="{$trove-resource-uri}">{/response/query}</ref></p>
+					</sourceDesc>
+				</fileDesc>
+			</teiHeader>
 			<xsl:apply-templates/>
 		</teiCorpus>
 	</xsl:template>
@@ -15,7 +53,23 @@
 				<xsl:for-each select="@next">
 					<xsl:attribute name="next" select="concat(., '#', ancestor::category/@code)"/>
 				</xsl:for-each>
-				<!-- TODO expand to cover all Trove's content, not just newspaper articles -->
+				<teiHeader>
+					<fileDesc>
+						<titleStmt>
+							<title>{$corpus-title}</title>
+							<title>({ancestor::category/@name})</title>
+						</titleStmt>
+					<publicationStmt>
+						<p>Published by converting the results of a Trove API query into TEI XML.</p>
+					</publicationStmt>
+					<sourceDesc>
+						<xsl:for-each select="request-parameters[@name='proxy-metadata-name'][normalize-space(@value)]">
+							<p>{@value}</p>
+						</xsl:for-each>
+						<p>Derived from the <title>{ancestor::category/@name}</title> category contained within the results of the Trove API query <ref target="{$trove-resource-uri}">{/response/query}</ref></p>
+					</sourceDesc>
+					</fileDesc>
+				</teiHeader>
 				<xsl:apply-templates select="article|work|people"/>
 			</teiCorpus>
 		</xsl:where-populated>

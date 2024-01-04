@@ -198,6 +198,13 @@
 				<p:documentation>Now process just the body of the Trove API response</p:documentation>
 				<p:viewport match="/c:response/c:body/*" name="trove-response-body">
 			
+					<p:documentation>Include the Trove HTTP request data so that the crosswalk can extract metadata from it</p:documentation>
+					<p:insert match="/*" position="first-child">
+						<p:input port="insertion">
+							<p:pipe step="proxy-request" port="source"/>
+						</p:input>
+					</p:insert>
+					
 					<p:documentation>Include additional data for people listed in the response</p:documentation>
 					<z:enhance-people-data>
 						<p:with-option name="include-people-australia" select="$proxy-include-people-australia"/>
