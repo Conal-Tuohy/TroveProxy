@@ -70,7 +70,7 @@
 					</sourceDesc>
 					</fileDesc>
 				</teiHeader>
-				<xsl:apply-templates select="article|work|people"/>
+				<xsl:apply-templates/>
 			</teiCorpus>
 		</xsl:where-populated>
 	</xsl:template>
