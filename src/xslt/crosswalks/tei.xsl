@@ -88,7 +88,9 @@
 					<publicationStmt>
 						<publisher>National Library of Australia</publisher>
 						<pubPlace>Canberra, ACT</pubPlace>
-						<extent>{wordCount}</extent>
+						<xsl:for-each select="wordCount">
+							<extent>{.} words</extent>
+						</xsl:for-each>
 						<availability>
 							<p>Available from Trove Australia</p>
 						</availability>
