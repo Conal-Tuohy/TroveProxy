@@ -23,18 +23,23 @@
 		"/>
 		<xsl:variable name="parameters" select="$query => tokenize('&amp;')"/>
 		<!-- throw out any category parameters that don't match current category -->
+		<!-- and replace comma-separated multi-value parameters with multiple instances of a parameter e.g.
+			replace "include=articleText%2Cworkversions" with "include=articleText&include=workversions"
+		-->
 		<xsl:variable name="refined-parameters" select="
 			(
-				$parameters[not(substring-before(., '=') = ('category', 'facet'))], (: ditch any categories and facets :)
+				$parameters[not(substring-before(., '=') = ('category', 'facet', 'include'))], (: ditch any categories and facets, and 'include' options :)
 				concat('category=', $category-code), (: add the current category back :)
-				(: parse comma-separated lists in 'facet' parameters and create multiple 'facet' parameters with single values :)
-				for $facet in 
-					$parameters[substring-before(., '=') = 'facet'] 
+				(: parse comma-separated lists in 'facet' and 'include' parameters and replace them with multiple parameters each with a single value :)
+				for $parameter in 
+					$parameters[substring-before(., '=') = ('facet', 'include')] 
 				return 
-					for $facet-value in 
-						$facet => substring-after('=') => tokenize('%2C')
-					return 
-						concat('facet=', $facet-value) 
+					let $parameter-name:= substring-before($parameter, '=')
+					return
+						for $parameter-value in 
+							$parameter => substring-after('=') => tokenize('%2C')
+						return 
+							concat($parameter-name, '=', $parameter-value) 
 			)
 		"/>
 		<xsl:attribute name="next" select="
