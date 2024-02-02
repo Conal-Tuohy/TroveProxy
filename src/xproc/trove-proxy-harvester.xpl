@@ -5,9 +5,12 @@
 	xmlns:z="https://github.com/Conal-Tuohy/XProc-Z"
 	xmlns:t="https://github.com/Conal-Tuohy/TroveProxy"
 	xmlns:file="http://exproc.org/proposed/steps/file"
+	xmlns:l="http://xproc.org/library"
 	xmlns:init-parameters="tag:conaltuohy.com,2015:webapp-init-parameters">
 
 	<p:import href="http://xmlcalabash.com/extension/steps/library-1.0.xpl"/>
+	<p:import href="zip.xpl"/>
+	<p:import href="recursive-directory-list.xpl"/>
 
 	<p:input port='source' primary='true'/>
 	<!-- e.g.
@@ -56,94 +59,90 @@
 				</p:choose>
 			</p:when>
 			<p:when test="starts-with($path, '/harvester/harvest/')">
-				<!-- either a request for a harvest description, a harvest data file, 
-				or an internal request to run a harvest -->
-				<p:variable name="sub-path" select="substring-after($path, '/harvester/harvest/')"/>
+				<!-- a request relating to an existing harvest -->
 				<p:choose>
-					<p:when test="ends-with($path, '/run')">
-						<p:choose>
-							<p:when test="$method = 'POST' ">
-								<t:run-harvest/>
-							</p:when>
-							<p:otherwise>
-								<z:method-not-allowed>
-									<p:with-option name="method" select="$method"/>
-								</z:method-not-allowed>
-							</p:otherwise>
-						</p:choose>
-					</p:when>
-					<p:when test="ends-with($path, '/')">
-						<t:view-harvest/>
+					<p:when test="$method = 'POST' ">
+						<!-- an internal request to run a harvest -->
+						<p:variable name="harvest-name" select="$path => substring-after('/harvester/harvest/') => substring-before('/')"/>
+						<t:run-harvest>
+							<p:with-option name="harvest-name" select="$harvest-name"/>
+						</t:run-harvest>
 					</p:when>
 					<p:otherwise>
-						<t:download-data-file/>
+						<p:variable name="sub-path" select="substring-after($path, '/harvester/harvest/')"/>
+						<cx:message>
+							<p:with-option name="message" select="concat('sub-path is [', $sub-path, ']')"/>
+						</cx:message>
+						<p:choose>
+							<p:when test="ends-with($path, '/')">
+								<!-- request for a page describing the harvest -->
+								<p:variable name="harvest-name" select="substring-after($path, '/harvester/harvest/')"/>
+								<t:view-harvest>
+									<p:with-option name="harvest-name" select="$harvest-name"/>
+								</t:view-harvest>
+							</p:when>
+							<p:otherwise>
+								<!-- request for one of the harvest's files -->
+								<p:variable name="filename" select="
+									/c:request/c:param-set[@xml:id='uri']/c:param[@name='path']/@value
+									=> substring-after('/harvester/harvest/')
+								"/>
+								<t:download-data-file>
+									<p:with-option name="filename" select="$filename"/>
+								</t:download-data-file>
+							</p:otherwise>
+						</p:choose>
 					</p:otherwise>
 				</p:choose>
 			</p:when>
-			<p:otherwise>
-				<p:identity/>
-				<z:make-http-response/>
-			</p:otherwise>
 		</p:choose>
 	</p:group>
 
 	<p:declare-step name="download-data-file" type="t:download-data-file">
-		<p:input port="source"/>
 		<p:output port="result"/>
+		<!-- filename is relative to the "harvests" folder -->
+		<p:option name="filename" required="true"/>
 		<p:variable name="harvests-directory" select="p:system-property('init-parameters:harvester.harvest-directory')"/>
-		<p:variable name="filename" select="
-			concat(
-				$harvests-directory,
-				substring-after(
-					/c:request/c:param-set[@xml:id='uri']/c:param[@name='path']/@value,
-					'/harvester/harvest/'
-				)
-			)
-		"/>
 		<p:variable name="extension" select="replace($filename, '.*(\..*)', '$1')"/>
 		<p:choose>
 			<p:when test="$extension = '.xml'">
 				<p:load>
-					<p:with-option name="href" select="$filename"/>
+					<p:with-option name="href" select="concat($harvests-directory, '/', $filename)"/>
 				</p:load>
 				<z:make-http-response/>
 			</p:when>
 			<p:otherwise>
 				<p:template name="load-request">
-					<p:with-param name="url" select="$filename"/>
+					<p:with-param name="url" select="concat($harvests-directory, '/', $filename)"/>
+					<p:input port="source"><p:empty/></p:input>
 					<p:input port="template">
 						<p:inline>
-							<c:request href="{$url}" method="GET" override-content-type="text/plain"/>
+							<c:request href="{$url}" method="GET"/>
 						</p:inline>
 					</p:input>
 				</p:template>
 				<p:http-request/>
 				<p:add-attribute match="/c:body" attribute-name="content-type">
-					<p:with-option name="attribute-value" select="if ($extension = '.csv') then 'text/csv' else 'text/plain'"/>
+					<p:with-option name="attribute-value" select="
+						(
+							map{
+								'.csv': 'text/csv',
+								'.zip': 'application/zip'
+							}($extension),
+							'application/octet-stream'
+						)[1]
+					"/>
 				</p:add-attribute>
 				<p:wrap match="/c:body" wrapper="c:response"/>
 				<p:add-attribute match="/c:response" attribute-name="status" attribute-value="200"/>
 			</p:otherwise>
 		</p:choose>
-		<!--
-		<p:identity>
-			<p:input port="source">
-				<p:inline>
-					<c:response status="200">
-						<c:body content-type="text/plain">data file goes here</c:body>
-					</c:response>
-				</p:inline>
-			</p:input>
-		</p:identity>
-		-->
 	</p:declare-step>
 	
 	<p:declare-step name="view-harvest" type="t:view-harvest">
-		<p:input port="source"/>
 		<p:output port="result"/>
-		<p:variable name="path" select="/c:request/c:param-set[@xml:id='uri']/c:param[@name='path']/@value"/>
+		<p:option name="harvest-name" required="true"/>
 		<p:variable name="harvests-directory" select="p:system-property('init-parameters:harvester.harvest-directory')"/>
-		<p:variable name="harvest-name" select="substring-after($path, '/harvester/harvest/')"/>
 		<p:variable name="harvest-directory" select="concat($harvests-directory, $harvest-name)"/>
 		<p:directory-list>
 			<p:with-option name="path" select="$harvest-directory"/>
@@ -162,9 +161,6 @@
 	<p:declare-step name="list-harvests" type="t:list-harvests">
 		<p:input port="source"/>
 		<p:output port="result"/>
-		<!--
-		<p:variable name="uri-components" select="/c:request/c:param-set[@xml:id='uri']/c:param[@name='path']/@value"/>
-		-->
 		<p:variable name="harvests-directory" select="p:system-property('init-parameters:harvester.harvest-directory')"/>
 
 		<p:variable name="example-harvest-url" select=" 'the URL of your query' "/>
@@ -226,20 +222,27 @@
 							<p:load>
 								<p:with-option name="href" select="concat($harvest-directory, '/status.xml')"/>
 							</p:load>
-							<p:add-attribute match="/harvest" attribute-name="status" attribute-value="restarting"/>
+							<p:add-attribute match="/harvest" attribute-name="status" attribute-value="restarting harvest..."/>
 							<p:add-attribute match="/harvest" attribute-name="last-updated">
 								<p:with-option name="attribute-value" select="current-dateTime()"/>
+							</p:add-attribute>
+							<p:insert match="harvest" position="first-child">
+								<p:input port="insertion">
+									<p:inline>
+										<pending-download/>
+									</p:inline>
+								</p:input>
+							</p:insert>
+							<p:add-attribute match="/harvest/pending-download[not(@url)][last()]" attribute-name="url">
+								<p:with-option name="attribute-value" select="$harvest-url"/>
 							</p:add-attribute>
 							<p:insert match="harvest" position="last-child">
 								<p:input port="insertion">
 									<p:inline>
-										<pending/>
+										<zip/>
 									</p:inline>
 								</p:input>
 							</p:insert>
-							<p:add-attribute match="/harvest/pending[not(@url)][last()]" attribute-name="url">
-								<p:with-option name="attribute-value" select="$harvest-url"/>
-							</p:add-attribute>
 						</p:group>
 						<p:catch>
 							<!-- create an initial status.xml since it doesn't already exist -->
@@ -252,9 +255,10 @@
 											status="starting"
 											started="{current-dateTime()}" 
 											last-updated="{current-dateTime()}" 
-											requests="0"
+											requests-made="0"
 										>
-											<pending url="{$harvest-url}"/>
+											<pending-download url="{$harvest-url}"/>
+											<zip/>
 										</harvest>
 									</p:inline>
 								</p:input>
@@ -270,7 +274,7 @@
 						<p:input port="source"><p:empty/></p:input>
 						<p:input port="template">
 							<p:inline exclude-inline-prefixes="#all">
-								<c:request href="http://localhost:8080/harvester/harvest/{$name}/run" method="POST"/>
+								<c:request href="http://localhost:8080/harvester/harvest/{$name}/" method="POST"/>
 							</p:inline>
 						</p:input>
 					</p:template>
@@ -307,8 +311,17 @@
 		</p:group>
 	</p:declare-step>
 	
-	<!-- runs in the background -->
+	<!-- Another pipeline, responding to an HTTP request, will launch this pipeline as a background task. -->
+	<!-- The output of this pipeline is not connected to a user's HTTP request; it will simply be discarded by the XProc-Z runtime. -->
+	<!-- The pipeline reads the harvest's "status.xml" file, executes the first command in it, and then recurses to -->
+	<!-- continue the harvest, until complete --> 
 	<p:declare-step name="run-harvest" type="t:run-harvest">
+		<p:option name="harvest-name" required="true"/>
+		<p:documentation>
+			The input port provides the http request that caused this harvest to run a single iteration; 
+			if this iteration has not completed the harvest then the request will be returned to XProc-Z's,
+			bounce off the "trampoline" and cause the pipeline to run again. 
+		</p:documentation>
 		<p:input port="source"/>
 		<p:documentation>
 			The output port produces a sequence of two documents: 
@@ -318,11 +331,9 @@
 		<p:output port="result" sequence="true"/>
 		<p:documentation>
 			Expected input:
-			<c:request xmlns:c="http://www.w3.org/ns/xproc-step" href="/harvester/harvest/test%20of%20harvest3/run" method="POST"/>
+			<c:request xmlns:c="http://www.w3.org/ns/xproc-step" href="/harvester/harvest/test%20of%20harvest3/" method="POST"/>
 		</p:documentation>
 		<!-- find the harvest folder -->
-		<p:variable name="request-path" select="/c:request/c:param-set[@xml:id='uri']/c:param[@name='path']/@value"/>
-		<p:variable name="harvest-name" select="$request-path => substring-after('/harvester/harvest/') => substring-before('/run')"/>
 		<p:variable name="harvests-directory" select="p:system-property('init-parameters:harvester.harvest-directory')"/>
 		<p:variable name="harvest-directory" select="concat($harvests-directory, $harvest-name)"/>
 		<!-- open the status.xml file -->
@@ -336,27 +347,15 @@
 					'created: ', /harvest/@started, ', ',
 					'last updated: ', /harvest/@last-updated, ', ',
 					'status: ', /harvest/@status, ', ',
-					'requests issued: ', /harvest/@requests
+					'requests issued: ', /harvest/@requests-made
 				)
 			"/>
 		</cx:message>
 		<!-- if the harvest is not already complete, run it -->
 		<p:choose name="running-harvest">
-			<p:when test="/harvest/@status='completed'">
-				<!-- the harvest had already completed, so this request to run it should not have been made -->
-				<p:identity>
-					<p:input port="source">
-						<p:inline exclude-inline-prefixes="#all">
-							<c:response status="400"><!-- bad request -->
-								<c:body content-type="text/plain">harvest was already complete</c:body>
-							</c:response>
-						</p:inline>
-					</p:input>
-				</p:identity>
-			</p:when>
-			<p:otherwise>
-				<p:variable name="requests" select="1 + number(/harvest/@requests)"/>
-				<p:variable name="url" select="/harvest/pending[1]/@url"/>
+			<p:when test="/harvest/pending-download">
+				<p:variable name="requests-made" select="1 + number(/harvest/@requests-made)"/>
+				<p:variable name="url" select="/harvest/pending-download[1]/@url"/>
 				<!-- download and save the resource named by the request number -->
 				<p:template name="create-trove-request">
 					<p:with-param name="url" select="$url"/>
@@ -370,7 +369,7 @@
 				<p:choose>
 					<p:when test="/c:response/@status = '200'">
 						<t:process-trove-response name="ingest-harvested-resource">
-							<p:with-option name="requests" select="$requests"/>
+							<p:with-option name="requests-made" select="$requests-made"/>
 							<p:with-option name="harvest-directory" select="$harvest-directory"/>
 							<p:with-option name="harvest-name" select="$harvest-directory"/>
 						</t:process-trove-response>
@@ -405,14 +404,64 @@
 						</p:identity>
 					</p:otherwise>
 				</p:choose>
-			</p:otherwise>
+			</p:when>
+			<p:when test="/harvest/zip">
+				<!-- there are no pending downloads, but there's a pending zip task -->
+
+				<!-- update the status file -->
+				<p:load>
+					<p:with-option name="href" select="concat($harvest-directory, '/status.xml')"/>
+				</p:load>
+				<p:add-attribute match="/harvest" attribute-name="status" attribute-value="zipping..."/>
+				<p:store>
+					<p:with-option name="href" select="concat($harvest-directory, '/status.xml')"/>
+				</p:store>
+				<t:zip-harvest name="zip">
+					<p:with-option name="zip-file" select="concat($harvest-directory, '/', $harvest-name, '.zip')"/>
+					<p:with-option name="harvest-directory" select="concat($harvests-directory, $harvest-name)"/>
+				</t:zip-harvest>
+				<!-- update the status file -->
+				<p:load cx:depends-on="zip">
+					<p:with-option name="href" select="concat($harvest-directory, '/status.xml')"/>
+				</p:load>
+				<p:add-attribute match="/harvest" attribute-name="status" attribute-value="zipped"/>
+				<p:delete match="zip"/>
+				<p:store>
+					<p:with-option name="href" select="concat($harvest-directory, '/status.xml')"/>
+				</p:store>
+				<!-- generate a pro forma response for XProc-Z's trampoline client to ignore -->
+				<p:template>
+					<p:input port="source"><p:empty/></p:input>
+					<p:input port="parameters"><p:empty/></p:input>
+					<p:input port="template">
+						<p:inline exclude-inline-prefixes="#all">
+							<c:response status="201"><!-- created -->
+								<c:header name="Location" value="{$harvest-name}.zip"/>
+								<c:body content-type="text/plain">Zip file created</c:body>
+							</c:response>
+						</p:inline>
+					</p:input>
+				</p:template>
+			</p:when>
+			<p:otherwise>
+				<!-- there are no further tasks, so this request to run it should not have been made -->
+				<p:identity>
+					<p:input port="source">
+						<p:inline exclude-inline-prefixes="#all">
+							<c:response status="400"><!-- bad request -->
+								<c:body content-type="text/plain">harvest was already complete</c:body>
+							</c:response>
+						</p:inline>
+					</p:input>
+				</p:identity>
+			</p:otherwise>			
 		</p:choose>
 	</p:declare-step>
 	
 	<p:declare-step name="process-trove-response" type="t:process-trove-response">
 		<p:input port="source"/>
 		<p:output port="result" sequence="true"/>
-		<p:option name="requests" required="true"/>
+		<p:option name="requests-made" required="true"/>
 		<p:option name="harvest-directory" required="true"/>
 		<p:option name="harvest-name" required="true"/>
 		<p:variable name="query-response-status" select="/c:response/@status"/>
@@ -425,7 +474,7 @@
 		"/>
 		<p:variable name="filename" select="
 			concat(
-				format-integer($requests, '296635227'), (: Trove contains ~300M items :)
+				format-integer($requests-made, '296635227'), (: Trove contains ~300M items :)
 				$extension
 			)
 		"/>
@@ -452,7 +501,7 @@
 			remove the downloaded URL,
 			add any new 'next' or 'section' links from the downloaded resource 
 		-->
-		<p:for-each name="new-pending-links">
+		<p:for-each name="new-pending-downloads">
 			<p:iteration-source select="
 				/c:response/c:header
 					[lower-case(@name)='link']
@@ -461,11 +510,11 @@
 				<p:pipe step="process-trove-response" port="source"/>
 			</p:iteration-source>
 			<p:output port="result"/>
-			<p:template name="pending-url">
+			<p:template name="pending-download">
 				<p:with-param name="url" select="substring-before(substring-after(/c:header/@value, '&lt;'), '&gt;')"/>
 				<p:input port="template">
 					<p:inline exclude-inline-prefixes="#all">
-						<pending url="{$url}"/>
+						<pending-download url="{$url}"/>
 					</p:inline>
 				</p:input>
 			</p:template>
@@ -479,13 +528,13 @@
 		<p:load name="harvest-status-after-trove-query">
 			<p:with-option name="href" select="concat($harvest-directory, '/status.xml')"/>
 		</p:load>
-		<p:add-attribute match="/harvest" attribute-name="requests">
-			<p:with-option name="attribute-value" select="$requests"/>
+		<p:add-attribute match="/harvest" attribute-name="requests-made">
+			<p:with-option name="attribute-value" select="$requests-made"/>
 		</p:add-attribute>
-		<p:delete match="/harvest/pending[1]"/>
+		<p:delete match="/harvest/pending-download[1]"/>
 		<p:insert match="/harvest" position="last-child">
 			<p:input port="insertion">
-				<p:pipe step="new-pending-links" port="result"/>
+				<p:pipe step="new-pending-downloads" port="result"/>
 			</p:input>
 		</p:insert>
 		<p:choose>
@@ -495,14 +544,14 @@
 					<p:with-option name="message" select="concat('harvester aborted harvest &quot;', $harvest-name, '&quot;')"/>
 				</cx:message>
 			</p:when>
-			<p:when test="not(/harvest/pending)">
-				<p:add-attribute match="/harvest" attribute-name="status" attribute-value="completed"/>
+			<p:when test="not(/harvest/pending-download)">
+				<p:add-attribute match="/harvest" attribute-name="status" attribute-value="harvest completed"/>
 				<cx:message>
 					<p:with-option name="message" select="concat('harvester completed harvest &quot;', $harvest-name, '&quot;')"/>
 				</cx:message>
 			</p:when>
 			<p:otherwise>
-				<p:add-attribute match="/harvest" attribute-name="status" attribute-value="running"/>
+				<p:add-attribute match="/harvest" attribute-name="status" attribute-value="harvesting..."/>
 			</p:otherwise>
 		</p:choose>
 		<p:add-attribute match="/harvest" attribute-name="last-updated">
@@ -557,7 +606,7 @@
 		<!-- update it -->
 		<p:xslt name="update-ro-crate-metadata">
 			<p:with-param name="filename" select="$filename"/>
-			<p:with-param name="request-number" select="$requests"/>
+			<p:with-param name="request-number" select="$requests-made"/>
 			<p:with-param name="content-type" select="$content-type"/>
 			<p:with-param 
 				name="trove-harvester-version" 
@@ -695,6 +744,35 @@
 				</p:identity>
 			</p:catch>
 		</p:try>
+	</p:declare-step>
+	
+	<p:declare-step name="zip-harvest" type="t:zip-harvest">
+		<p:documentation>
+			The output port produces a sequence of two documents: 
+			a <c:response/> which is notionally returned to the client, though XProc-Z will discard it unread 
+			a <c:request/> to be handled internally by XProc-Z to actually continue the harvest
+		</p:documentation>
+		<p:output port="result" sequence="true"/>
+		<p:option name="zip-file" required="true"/>
+		<p:option name="harvest-directory" required="true"/>
+		<!-- List the files to be zipped -->
+		<l:recursive-directory-list>
+			<p:with-option name="path" select="$harvest-directory"/>
+		</l:recursive-directory-list>
+		<!-- Don't include the status.xml or any existing zip file in the zip file -->
+		<p:delete match="c:file[ends-with(@name, '.zip') or @name='status.xml']"/>
+		<z:zip-directory>
+			<p:with-option name="href" select="$zip-file"/>
+		</z:zip-directory>
+		<z:make-http-response/>
+	</p:declare-step>
+	
+	<p:declare-step name="set-harvest-status">
+		<p:input port="source"/>
+		<p:output port="result"/>
+		<p:option name="status" required="true"/>
+		<p:option name="harvest-directory" required="true"/>
+		
 	</p:declare-step>
 	
 </p:declare-step>
