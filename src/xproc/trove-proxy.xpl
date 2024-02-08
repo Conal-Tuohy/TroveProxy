@@ -161,15 +161,40 @@
 		</p:xslt>
 		
 		<!--
-		-->
 		<z:dump href="/tmp/trove-http-request.xml"/>
+		-->
 
 		<p:documentation>Actually issue the request to the Trove API and receive a response</p:documentation>
-		<p:http-request name="issue-request-to-trove-api"/>
+		<p:try>
+			<p:group>
+				<p:http-request name="issue-request-to-trove-api"/>
+			</p:group>
+			<p:catch name="network-error">
+				<p:variable name="error" select="/*">
+					<p:pipe step="network-error" port="error"/>
+				</p:variable>
+				<cx:message>
+					<p:with-option name="message" select="$error"/>
+				</cx:message>
+				<p:template>
+					<p:input port="parameters"><p:empty/></p:input>
+					<p:input port="source">
+						<p:pipe step="network-error" port="error"/>
+					</p:input>
+					<p:input port="template">
+						<p:inline>
+							<c:response status="502">
+								<c:body content-type="application/xml">{/*}</c:body>
+							</c:response>
+						</p:inline>
+					</p:input>
+				</p:template>
+			</p:catch>
+		</p:try>
 		
 		<!--
-		-->
 		<z:dump href="/tmp/trove-http-response.xml"/>
+		-->
 		<p:choose>
 			<p:when test="/c:response/@status = '200'">
 				<!-- Trove query returned successfully -->

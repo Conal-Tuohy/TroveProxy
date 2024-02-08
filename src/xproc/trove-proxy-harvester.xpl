@@ -64,6 +64,9 @@
 					<p:when test="$method = 'POST' ">
 						<!-- an internal request to run a harvest -->
 						<p:variable name="harvest-name" select="$path => substring-after('/harvester/harvest/') => substring-before('/')"/>
+						<!--
+						<z:dump href="/tmp/run-harvest-request.xml"/>
+						-->
 						<t:run-harvest>
 							<p:with-option name="harvest-name" select="$harvest-name"/>
 						</t:run-harvest>
@@ -144,14 +147,19 @@
 		<p:option name="harvest-name" required="true"/>
 		<p:variable name="harvests-directory" select="p:system-property('init-parameters:harvester.harvest-directory')"/>
 		<p:variable name="harvest-directory" select="concat($harvests-directory, $harvest-name)"/>
+		<p:load name="status">
+			<p:with-option name="href" select="concat($harvest-directory, '/status.xml')"/>
+		</p:load>
 		<p:directory-list>
 			<p:with-option name="path" select="$harvest-directory"/>
 		</p:directory-list>
-		<p:viewport match="/c:directory/c:file[@name='status.xml']">
-			<p:load>
-				<p:with-option name="href" select="concat($harvest-directory, '/status.xml')"/>
-			</p:load>
-		</p:viewport>
+		<p:insert position="first-child" match="/c:directory/c:file[@name='status.xml']">
+			<p:input port="insertion">
+				<p:pipe step="status" port="result"/>
+			</p:input>
+		</p:insert>
+		<!-- XML Calabash's p:zip step creates a temp file which we'll ignore -->
+		<p:delete match="c:file[starts-with(@name, 'calabash-temp')]"/>
 		<p:xslt>
 			<p:input port="parameters"><p:empty/></p:input>
 			<p:input port="stylesheet"><p:document href="../xslt/harvester/view-harvest.xsl"/></p:input>
@@ -229,11 +237,11 @@
 							<p:insert match="harvest" position="first-child">
 								<p:input port="insertion">
 									<p:inline>
-										<pending-download/>
+										<download/>
 									</p:inline>
 								</p:input>
 							</p:insert>
-							<p:add-attribute match="/harvest/pending-download[not(@url)][last()]" attribute-name="url">
+							<p:add-attribute match="/harvest/download[not(@url)][last()]" attribute-name="url">
 								<p:with-option name="attribute-value" select="$harvest-url"/>
 							</p:add-attribute>
 							<p:insert match="harvest" position="last-child">
@@ -257,7 +265,7 @@
 											last-updated="{current-dateTime()}" 
 											requests-made="0"
 										>
-											<pending-download url="{$harvest-url}"/>
+											<download url="{$harvest-url}"/>
 											<zip/>
 										</harvest>
 									</p:inline>
@@ -352,10 +360,10 @@
 			"/>
 		</cx:message>
 		<!-- if the harvest is not already complete, run it -->
-		<p:choose name="running-harvest">
-			<p:when test="/harvest/pending-download">
+		<p:choose name="which-action-to-perform-next">
+			<p:when test="/harvest/download">
 				<p:variable name="requests-made" select="1 + number(/harvest/@requests-made)"/>
-				<p:variable name="url" select="/harvest/pending-download[1]/@url"/>
+				<p:variable name="url" select="/harvest/download[1]/@url"/>
 				<!-- download and save the resource named by the request number -->
 				<p:template name="create-trove-request">
 					<p:with-param name="url" select="$url"/>
@@ -373,11 +381,17 @@
 							<p:with-option name="harvest-directory" select="$harvest-directory"/>
 							<p:with-option name="harvest-name" select="$harvest-directory"/>
 						</t:process-trove-response>
+						<!-- strip the c:param-set elements out of the c:request, turning it back into an unparsed HTTP request -->
+						<p:delete name="repeat-request" match="c:param-set">
+							<p:input port="source">
+								<p:pipe step="run-harvest" port="source"/>
+							</p:input>
+						</p:delete>
 						<p:identity>
 							<p:input port="source">
 								<p:pipe step="ingest-harvested-resource" port="result"/>
 								<!-- repeat the current request -->
-								<p:pipe step="run-harvest" port="source"/>
+								<p:pipe step="repeat-request" port="result"/>
 							</p:input>
 						</p:identity>
 					</p:when>
@@ -390,6 +404,7 @@
 							<p:with-option name="href" select="concat($harvest-directory, '/status.xml')"/>
 						</p:load>
 						<p:add-attribute match="/harvest" attribute-name="status" attribute-value="aborted"/>
+						<p:delete match="/harvest/*"/>
 						<p:store>
 							<p:with-option name="href" select="concat($harvest-directory, '/status.xml')"/>
 						</p:store>
@@ -424,15 +439,15 @@
 				<p:load cx:depends-on="zip">
 					<p:with-option name="href" select="concat($harvest-directory, '/status.xml')"/>
 				</p:load>
-				<p:add-attribute match="/harvest" attribute-name="status" attribute-value="zipped"/>
-				<p:delete match="zip"/>
+				<p:add-attribute match="/harvest" attribute-name="status" attribute-value="harvested and zipped"/>
+				<p:delete match="/harvest/zip"/>
 				<p:store>
 					<p:with-option name="href" select="concat($harvest-directory, '/status.xml')"/>
 				</p:store>
 				<!-- generate a pro forma response for XProc-Z's trampoline client to ignore -->
 				<p:template>
+					<p:with-param name="harvest-name" select="$harvest-name"/>
 					<p:input port="source"><p:empty/></p:input>
-					<p:input port="parameters"><p:empty/></p:input>
 					<p:input port="template">
 						<p:inline exclude-inline-prefixes="#all">
 							<c:response status="201"><!-- created -->
@@ -501,7 +516,7 @@
 			remove the downloaded URL,
 			add any new 'next' or 'section' links from the downloaded resource 
 		-->
-		<p:for-each name="new-pending-downloads">
+		<p:for-each name="new-downloads">
 			<p:iteration-source select="
 				/c:response/c:header
 					[lower-case(@name)='link']
@@ -510,11 +525,11 @@
 				<p:pipe step="process-trove-response" port="source"/>
 			</p:iteration-source>
 			<p:output port="result"/>
-			<p:template name="pending-download">
+			<p:template name="download">
 				<p:with-param name="url" select="substring-before(substring-after(/c:header/@value, '&lt;'), '&gt;')"/>
 				<p:input port="template">
 					<p:inline exclude-inline-prefixes="#all">
-						<pending-download url="{$url}"/>
+						<download url="{$url}"/>
 					</p:inline>
 				</p:input>
 			</p:template>
@@ -531,10 +546,10 @@
 		<p:add-attribute match="/harvest" attribute-name="requests-made">
 			<p:with-option name="attribute-value" select="$requests-made"/>
 		</p:add-attribute>
-		<p:delete match="/harvest/pending-download[1]"/>
+		<p:delete match="/harvest/download[1]"/>
 		<p:insert match="/harvest" position="last-child">
 			<p:input port="insertion">
-				<p:pipe step="new-pending-downloads" port="result"/>
+				<p:pipe step="new-downloads" port="result"/>
 			</p:input>
 		</p:insert>
 		<p:choose>
@@ -544,7 +559,7 @@
 					<p:with-option name="message" select="concat('harvester aborted harvest &quot;', $harvest-name, '&quot;')"/>
 				</cx:message>
 			</p:when>
-			<p:when test="not(/harvest/pending-download)">
+			<p:when test="not(/harvest/download)">
 				<p:add-attribute match="/harvest" attribute-name="status" attribute-value="harvest completed"/>
 				<cx:message>
 					<p:with-option name="message" select="concat('harvester completed harvest &quot;', $harvest-name, '&quot;')"/>
@@ -601,7 +616,9 @@
 				<p:pipe step="downloaded-ro-crate-metadata" port="result"/>
 			</p:input>
 		</p:wrap-sequence>
+		<!--
 		<z:dump href="/tmp/merged-ro-crate.xml"/>
+		-->
 		
 		<!-- update it -->
 		<p:xslt name="update-ro-crate-metadata">
@@ -616,15 +633,10 @@
 				<p:document href="../xslt/harvester/update-ro-crate-metadata.xsl"/>
 			</p:input>
 		</p:xslt>
+		<!--
 		<z:dump href="/tmp/merged-and-updated-ro-crate.xml"/>
-<!--
-<p:sink/>
-<p:identity>
-	<p:input port="source">
-		<p:inline><string xmlns="">test of save-ro-crate-metadata</string></p:inline>
-	</p:input>
-</p:identity>
--->
+		-->
+
 		<!-- save the updated RO-Crate file -->
 		<t:save-ro-crate-metadata>
 			<p:with-option name="href" select="concat($harvest-directory, '/ro-crate-metadata.json')"/>
