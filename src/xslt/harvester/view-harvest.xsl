@@ -71,6 +71,14 @@
 										padding: 1em;
 										margin-bottom: 1em;
 									}
+									button#delete {
+										display: inline-block;
+										background-color: #FF0000;
+										color: #FFFFFF;
+										padding: 0.5em 1em;
+										border-radius: 0.5em;
+										text-decoration: none;
+									}
 									a.file {
 										display: inline-block;
 										background-color: #1F9EDE;
@@ -126,6 +134,43 @@
 										);
 									</script>
 								</div>
+								<xsl:if test="not($harvest/*) (: the harvest is finished as it contains no child elements which represent tasks still to do :)">
+									<div>
+										<form id="deletion" action="" method="delete">
+											<button id="delete">Delete dataset</button>
+										</form>
+										<script xsl:expand-text="false">
+											var form = document.getElementById("deletion");
+											form.addEventListener(
+												"submit", 
+												function(event) {
+													event.preventDefault();
+													if (confirm("Delete dataset?")) {
+														fetch(
+															new URL(event.currentTarget.action, document.location).href, // resolve URL relative to current page location
+															{
+																method: "DELETE", 
+																mode: "cors", // no-cors, *cors, same-origin
+																cache: "no-cache", // *default, no-cache, reload, force-cache, only-if-cached
+																credentials: "same-origin", // include, *same-origin, omit
+																/*headers: {
+																	'Content-Type': 'application/x-www-form-urlencoded',
+																},*/
+																redirect: "follow", // manual, *follow, error
+																referrerPolicy: "no-referrer", // no-referrer, *no-referrer-when-downgrade, origin, origin-when-cross-origin, same-origin, strict-origin, strict-origin-when-cross-origin, unsafe-url
+																//body: urlSearchParams
+															}
+														).then(
+															function(response) {
+																window.location.href= response.url;
+															}
+														);
+													}
+												}
+											);
+										</script>
+									</div>
+								</xsl:if>
 								<h2>Files</h2>
 								<!-- dataset package file, various metadata files -->
 								<ul class="files">

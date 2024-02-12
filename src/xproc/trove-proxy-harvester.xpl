@@ -71,6 +71,16 @@
 							<p:with-option name="harvest-name" select="$harvest-name"/>
 						</t:run-harvest>
 					</p:when>
+					<p:when test="$method = 'DELETE' ">
+						<!-- a request to delete a completed harvest -->
+						<p:variable name="harvest-name" select="$path => substring-after('/harvester/harvest/') => substring-before('/')"/>
+						<!--
+						<z:dump href="/tmp/run-harvest-request.xml"/>
+						-->
+						<t:delete-harvest>
+							<p:with-option name="harvest-name" select="$harvest-name"/>
+						</t:delete-harvest>
+					</p:when>
 					<p:otherwise>
 						<p:variable name="sub-path" select="substring-after($path, '/harvester/harvest/')"/>
 						<cx:message>
@@ -317,6 +327,37 @@
 			</p:try>
 			-->
 		</p:group>
+	</p:declare-step>
+	
+	<p:declare-step name="delete-harvest" type="t:delete-harvest">
+		<p:option name="harvest-name" required="true"/>
+		<p:documentation>
+			The input port provides the http request
+		</p:documentation>
+		<p:input port="source"/>
+		<p:documentation>
+			The output port produces a <c:response/> which redirects the client to the main "harvests" page
+		</p:documentation>
+		<p:output port="result" sequence="true"/>
+		<p:documentation>
+			Expected input:
+			<c:request xmlns:c="http://www.w3.org/ns/xproc-step" href="/harvester/harvest/test%20of%20harvest3/" method="DELETE"/>
+		</p:documentation>
+		<!-- find the harvest folder -->
+		<p:variable name="harvests-directory" select="p:system-property('init-parameters:harvester.harvest-directory')"/>
+		<p:variable name="harvest-directory" select="concat($harvests-directory, $harvest-name)"/>
+		<file:delete recursive="true">
+			<p:with-option name="href" select="$harvest-directory"/>
+		</file:delete>
+		<p:identity>
+			<p:input port="source">
+				<p:inline>
+					<c:response status="303">
+						<c:header name="Location" value=".."/>
+					</c:response>
+				</p:inline>
+			</p:input>
+		</p:identity>
 	</p:declare-step>
 	
 	<!-- Another pipeline, responding to an HTTP request, will launch this pipeline as a background task. -->
