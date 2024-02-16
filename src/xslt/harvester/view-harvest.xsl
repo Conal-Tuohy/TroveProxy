@@ -25,6 +25,13 @@
 		)
 	"/>
 	<xsl:variable name="date-format" select=" '[Y0001]-[M01]-[D01] [H01]:[m01]:[s01] [z,6-6]' "/>
+	
+	<xsl:template match="/c:errors">
+		<c:response status="404"><!-- not found -->
+			<c:header name="Access-Control-Allow-Origin" value="*"/>
+			<c:body content-type="text/plain">Dataset not found</c:body>
+		</c:response>
+	</xsl:template>
 		
 	<xsl:template match="/c:directory">
 		<xsl:choose>
@@ -71,15 +78,27 @@
 										padding: 1em;
 										margin-bottom: 1em;
 									}
-									button#delete {
+									button {
+										margin: 0.5em;
+										font-size: 1em;
 										display: inline-block;
-										background-color: #FF0000;
-										color: #FFFFFF;
 										padding: 0.5em 1em;
 										border-radius: 0.5em;
 										text-decoration: none;
+										border-width: 0;
+										font-weight: bold;
+									}
+									button#copy {
+										background-color: #FFFF00;
+										color: #000000;
+									}
+									button#delete {
+										background-color: #FF0000;
+										color: #FFFFFF;
 									}
 									a.file {
+										font-weight: bold;
+										font-size: 1em;
 										display: inline-block;
 										background-color: #1F9EDE;
 										color: #FFFFFF;
@@ -133,21 +152,33 @@
 											}
 										);
 									</script>
-								</div>
-								<xsl:if test="not($harvest/*) (: the harvest is finished as it contains no child elements which represent tasks still to do :)">
-									<div>
-										<form id="deletion" action="" method="delete">
-											<button id="delete">Delete dataset</button>
-										</form>
+									<xsl:if test="$data">
+										<button id="copy">Copy URLs of dataset data files</button>
 										<script xsl:expand-text="false">
-											var form = document.getElementById("deletion");
-											form.addEventListener(
-												"submit", 
+										async function copyDataURLsToClipboard() {
+											const type = "text/plain";
+											var text = Array.from(document.querySelectorAll("a.data.file")).join("\n");
+											const blob = new Blob([text], { type });
+											const data = [new ClipboardItem({ [type]: blob })];
+											await navigator.clipboard.write(data);
+										}										
+										var copyButton = document.getElementById("copy");
+										copyButton.addEventListener(
+											"click", 
+											copyDataURLsToClipboard
+										);
+										</script>
+									</xsl:if>
+									<xsl:if test="not($harvest/*) (: the harvest is finished as it contains no child elements which represent tasks still to do :)">
+										<button id="delete">Delete dataset</button>
+										<script xsl:expand-text="false">
+											var deleteButton = document.getElementById("delete");
+											deleteButton.addEventListener(
+												"click", 
 												function(event) {
-													event.preventDefault();
 													if (confirm("Delete dataset?")) {
 														fetch(
-															new URL(event.currentTarget.action, document.location).href, // resolve URL relative to current page location
+															document.location,
 															{
 																method: "DELETE", 
 																mode: "cors", // no-cors, *cors, same-origin
@@ -169,8 +200,8 @@
 												}
 											);
 										</script>
-									</div>
-								</xsl:if>
+									</xsl:if>
+								</div>
 								<h2>Files</h2>
 								<!-- dataset package file, various metadata files -->
 								<ul class="files">
@@ -194,7 +225,12 @@
 	</xsl:template>
 	
 	<xsl:template match="c:file">
-		<li><a href="{@name}" class="data file">{@name}</a></li>
+		<li><a href="{@name}" class="data file" title="{
+			if (ends-with(@name, '.zip')) then 'entire dataset contained in a zip file' else
+			if (@name = 'ro-crate-metadata.json') then 'ro-crate metadata file' else
+			if (@name = 'status.xml') then 'XML file describing the harvest status' else
+			'harvested data file'
+		}">{@name}</a></li>
 	</xsl:template>
 	
 	<xsl:template match="c:response">

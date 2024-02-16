@@ -157,19 +157,31 @@
 		<p:option name="harvest-name" required="true"/>
 		<p:variable name="harvests-directory" select="p:system-property('init-parameters:harvester.harvest-directory')"/>
 		<p:variable name="harvest-directory" select="concat($harvests-directory, $harvest-name)"/>
-		<p:load name="status">
-			<p:with-option name="href" select="concat($harvest-directory, '/status.xml')"/>
-		</p:load>
-		<p:directory-list>
-			<p:with-option name="path" select="$harvest-directory"/>
-		</p:directory-list>
-		<p:insert position="first-child" match="/c:directory/c:file[@name='status.xml']">
-			<p:input port="insertion">
-				<p:pipe step="status" port="result"/>
-			</p:input>
-		</p:insert>
-		<!-- XML Calabash's p:zip step creates a temp file which we'll ignore -->
-		<p:delete match="c:file[starts-with(@name, 'calabash-temp')]"/>
+		<p:try>
+			<p:group name="read-harvest-directory">
+				<p:load name="status">
+					<p:with-option name="href" select="concat($harvest-directory, 'status.xml')"/>
+				</p:load>
+				<p:directory-list name="harvest-files">
+					<p:with-option name="path" select="$harvest-directory"/>
+				</p:directory-list>
+				<p:insert position="first-child" match="/c:directory/c:file[@name='status.xml']">
+					<p:input port="insertion">
+						<p:pipe step="status" port="result"/>
+					</p:input>
+				</p:insert>
+				<!-- XML Calabash's p:zip step creates a temp file which we'll ignore -->
+				<p:delete match="c:file[starts-with(@name, 'calabash-temp')]"/>
+			</p:group>
+			<p:catch name="directory-list-failed">
+				<!-- failed to read directory -->
+				<p:identity>
+					<p:input port="source">
+						<p:pipe step="directory-list-failed" port="error"/>
+					</p:input>
+				</p:identity>
+			</p:catch>
+		</p:try>
 		<p:xslt>
 			<p:input port="parameters"><p:empty/></p:input>
 			<p:input port="stylesheet"><p:document href="../xslt/harvester/view-harvest.xsl"/></p:input>
