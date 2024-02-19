@@ -7,6 +7,7 @@
 >
 	<xsl:param name="if-modified-since"/>
 	<xsl:param name="name"/>
+	<xsl:param name="request-uri"/>
 
 	<xsl:variable name="files" select="/c:directory/c:file"/>
 	<xsl:variable name="ro-crate-metadata" select="$files[@name='ro-crate-metadata.json']"/>
@@ -53,6 +54,11 @@
 								</xsl:if>
 								<title>{@name}</title>
 								<style xsl:expand-text="false">
+									h2 {
+										margin-top: 1.5em;
+										font-weight: normal;
+										font-size: large;
+									}
 									ul.files {
 										display: flex;
 										flex-wrap: wrap;
@@ -61,6 +67,39 @@
 										row-gap: 1em;
 										align-items: start;
 										justify-content: start;
+									}
+									details {
+										display: block;
+									}
+									details summary {
+										display: block;
+										list-style: none;
+									}
+									details summary span {
+										background-color: #FFFF00;
+										color: #000000;
+										margin: 0.5em;
+										font-size: 1em;
+										display: inline-block;
+										padding: 0.5em 1em;
+										border-radius: 0.5em;
+										text-decoration: none;
+										border-width: 0;
+										font-weight: bold;
+										cursor: pointer;
+									}
+									details summary span.hide {
+										display: none;
+									}
+									details[open] summary span.hide {
+										display: inline;
+									}
+									details[open] summary span.show {
+										display: none;
+									}
+									details textarea {
+										margin: 0.5em;
+										height: 
 									}
 									ul.files li {
 										display: block;
@@ -88,13 +127,10 @@
 										border-width: 0;
 										font-weight: bold;
 									}
-									button#copy {
-										background-color: #FFFF00;
-										color: #000000;
-									}
 									button#delete {
 										background-color: #FF0000;
 										color: #FFFFFF;
+										cursor: pointer;
 									}
 									a.file {
 										font-weight: bold;
@@ -152,23 +188,6 @@
 											}
 										);
 									</script>
-									<xsl:if test="$data">
-										<button id="copy">Copy URLs of dataset data files</button>
-										<script xsl:expand-text="false">
-										async function copyDataURLsToClipboard() {
-											const type = "text/plain";
-											var text = Array.from(document.querySelectorAll("a.data.file")).join("\n");
-											const blob = new Blob([text], { type });
-											const data = [new ClipboardItem({ [type]: blob })];
-											await navigator.clipboard.write(data);
-										}										
-										var copyButton = document.getElementById("copy");
-										copyButton.addEventListener(
-											"click", 
-											copyDataURLsToClipboard
-										);
-										</script>
-									</xsl:if>
 									<xsl:if test="not($harvest/*) (: the harvest is finished as it contains no child elements which represent tasks still to do :)">
 										<button id="delete">Delete dataset</button>
 										<script xsl:expand-text="false">
@@ -176,7 +195,7 @@
 											deleteButton.addEventListener(
 												"click", 
 												function(event) {
-													if (confirm("Delete dataset?")) {
+													if (confirm("Are you sure you want to delete the harvested dataset?")) {
 														fetch(
 															document.location,
 															{
@@ -202,35 +221,49 @@
 										</script>
 									</xsl:if>
 								</div>
-								<h2>Files</h2>
-								<!-- dataset package file, various metadata files -->
+								<!-- dataset package file -->
+								<xsl:for-each select="$zip">
+									<h2>ro-crate package of entire dataset</h2>
+									<p><a href="{@name}" class="file">{@name}</a></p>
+								</xsl:for-each>
+								<!-- various metadata files -->
+								<h2>metadata files</h2>
 								<ul class="files">
-									<xsl:for-each select="($zip, $error, $ro-crate-metadata, $status)">
+									<xsl:for-each select="($error, $ro-crate-metadata, $status)">
 										<li><a href="{@name}" class="file">{@name}</a></li>
 									</xsl:for-each>
 								</ul>
-								<!-- individual dataset files -->
-								<ul class="files">
-									<xsl:for-each select="$data">
-										<xsl:sort select="@name"/>
-										<li><a href="{@name}" class="data file">{@name}</a></li>
-									</xsl:for-each>
-								</ul>
+								<xsl:if test="$data">
+									<h2>harvested data files</h2>
+									<details>
+										<summary><span class="show">Show dataset URLs</span><span class="hide">Hide dataset URLs</span> </summary>
+										<div>
+											<xsl:variable name="rows" select="count($data)"/>
+											<xsl:variable name="cols" select="string-length($request-uri) + max($data/@name/string-length())"/>
+											<textarea id="urls" rows="{$rows}" cols="{$cols}" style="width: {$cols}em; height: {1 + $rows}em;"><xsl:for-each select="$data">
+												<xsl:sort select="@name"/>
+												<xsl:if test="position() != 1"><xsl:value-of select="codepoints-to-string(10)"/></xsl:if>
+												<xsl:value-of select="$request-uri || @name"/>
+											</xsl:for-each></textarea>
+											<script>
+												document.getElementById("urls").select();
+											</script>
+										</div>
+									</details>
+									<!-- individual dataset files -->
+									<ul class="files">
+										<xsl:for-each select="$data">
+											<xsl:sort select="@name"/>
+											<li><a href="{@name}" class="data file">{@name}</a></li>
+										</xsl:for-each>
+									</ul>
+								</xsl:if>
 							</body>
 						</html>
 					</c:body>
 				</c:response>
 			</xsl:otherwise>
 		</xsl:choose>
-	</xsl:template>
-	
-	<xsl:template match="c:file">
-		<li><a href="{@name}" class="data file" title="{
-			if (ends-with(@name, '.zip')) then 'entire dataset contained in a zip file' else
-			if (@name = 'ro-crate-metadata.json') then 'ro-crate metadata file' else
-			if (@name = 'status.xml') then 'XML file describing the harvest status' else
-			'harvested data file'
-		}">{@name}</a></li>
 	</xsl:template>
 	
 	<xsl:template match="c:response">

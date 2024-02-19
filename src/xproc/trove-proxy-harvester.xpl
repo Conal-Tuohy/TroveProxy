@@ -92,6 +92,7 @@
 								<p:variable name="harvest-name" select="substring-after($path, '/harvester/harvest/')"/>
 								<t:view-harvest>
 									<p:with-option name="harvest-name" select="$harvest-name"/>
+									<p:with-option name="request-uri" select="/c:request/@href"/>
 								</t:view-harvest>
 							</p:when>
 							<p:otherwise>
@@ -155,6 +156,7 @@
 	<p:declare-step name="view-harvest" type="t:view-harvest">
 		<p:output port="result"/>
 		<p:option name="harvest-name" required="true"/>
+		<p:option name="request-uri" required="true"/>
 		<p:variable name="harvests-directory" select="p:system-property('init-parameters:harvester.harvest-directory')"/>
 		<p:variable name="harvest-directory" select="concat($harvests-directory, $harvest-name)"/>
 		<p:try>
@@ -183,7 +185,7 @@
 			</p:catch>
 		</p:try>
 		<p:xslt>
-			<p:input port="parameters"><p:empty/></p:input>
+			<p:with-param name="request-uri" select="$request-uri"/>
 			<p:input port="stylesheet"><p:document href="../xslt/harvester/view-harvest.xsl"/></p:input>
 		</p:xslt>
 	</p:declare-step>
